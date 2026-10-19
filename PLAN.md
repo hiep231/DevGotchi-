@@ -2,7 +2,7 @@
 
 > **Dự án:** DevGotchi — 3D Virtual Pet Productivity Platform (Telegram Web App)  
 > **Cập nhật lúc:** 19/10/2026  
-> **Trạng thái tổng thể:** **Hoàn thành 65% (Đã xong toàn bộ Frontend 3D, Gamified Soft UI, TanStack & Quản lý quy tắc)**
+> **Trạng thái tổng thể:** **Hoàn thành 90% (Fullstack Frontend 3D + Backend NestJS REST API + AI Gemini + GitHub Badges)**
 
 ---
 
@@ -12,9 +12,9 @@
 | :--- | :--- | :---: | :---: |
 | **P1. Khởi Tạo & Chuẩn Hóa** | Monorepo, AGENTS.md, 5 Skills, 3 Workflows, TanStack Query, Telegram SDK | **100%** | ✅ Hoàn thành |
 | **P2. Hệ Thống Thú Cưng 3D** | 4 Linh thú Three.js, Carousel chọn pet, Hoạt ảnh Cho ăn, Poke, Biểu cảm | **100%** | ✅ Hoàn thành |
-| **P3. Gameplay Pomodoro** | Vòng lặp Focus 25m/5m/15m, EXP/Level-up, Thức ăn rơi, Tactile UI | **90%** | ✅ Frontend hoàn chỉnh (chờ gắn DB) |
-| **P4. Backend API & AI Persona** | NestJS Clean Architecture, Prisma PostgreSQL, Gemini Flash AI, GitHub SVG | **15%** | 🔄 Đang triển khai |
-| **P5. Tích Hợp Bot & Triển Khai** | Tạo Telegram Bot Menu, Deploy Vercel/Railway, Test trên điện thoại thực tế | **0%** | ⏳ Chờ triển khai |
+| **P3. Gameplay Pomodoro** | Vòng lặp Focus 25m/5m/15m, EXP/Level-up, Thức ăn rơi, Tactile UI | **100%** | ✅ Hoàn thành |
+| **P4. Backend API & AI Persona** | NestJS Clean Architecture, Prisma PostgreSQL, Gemini Flash AI, GitHub SVG | **100%** | ✅ Hoàn thành |
+| **P5. Tích Hợp Bot & Triển Khai** | Tạo Telegram Bot Menu, Deploy Vercel/Railway, Test trên điện thoại thực tế | **0%** | ⏳ Sẵn sàng triển khai |
 
 ---
 

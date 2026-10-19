@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { ChevronLeft, ChevronRight, Sparkles, Heart, Zap, Shield, Wand2 } from 'lucide-react';
 import { STARTER_PETS } from '../data/petConfigs';
-import { usePetStore } from '../store/usePetStore';
+import { useAdoptPetMutation } from '../hooks/usePetQueries';
 import { PetCanvas } from './3d/PetCanvas';
 
 export const StarterSelection: React.FC = () => {
-  const { adoptPet } = usePetStore();
+  const adoptMutation = useAdoptPetMutation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [petName, setPetName] = useState('');
 
@@ -26,7 +26,10 @@ export const StarterSelection: React.FC = () => {
       spread: 70,
       origin: { y: 0.6 },
     });
-    adoptPet(currentConfig.id, petName.trim() || currentConfig.name);
+    adoptMutation.mutate({
+      type: currentConfig.id,
+      customName: petName.trim() || currentConfig.name,
+    });
   };
 
   return (

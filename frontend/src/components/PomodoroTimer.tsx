@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { Play, Pause, RotateCcw, Clock, CheckCircle2, Award } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
+import { useCompleteSessionMutation, useFoodsQuery } from '../hooks/usePetQueries';
 
 const TAGS = ['Frontend', 'Backend', 'Bugfix', 'LeetCode', 'Design'];
 
 export const PomodoroTimer: React.FC = () => {
-  const { pet, setMood, completeFocusSession } = usePetStore();
+  const { pet, setMood, foods: fallbackFoods } = usePetStore();
+  const { data: foods = fallbackFoods } = useFoodsQuery();
+  const sessionMutation = useCompleteSessionMutation();
 
   const [mode, setMode] = useState<'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK'>('FOCUS');
   const [selectedTag, setSelectedTag] = useState('Frontend');
@@ -49,19 +52,22 @@ export const PomodoroTimer: React.FC = () => {
 
   // Complete session handler
   const handleCompleteSession = () => {
-    if (mode === 'FOCUS') {
+    if (mode === 'FOCUS' && pet) {
       const minutes = Math.round(duration / 60);
-      const res = completeFocusSession(minutes, selectedTag);
-      setLastReward({ exp: res.expGained, leveledUp: res.leveledUp });
-
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-      });
-
-      // Clear reward badge after 6 seconds
-      setTimeout(() => setLastReward(null), 6000);
+      sessionMutation.mutate(
+        { minutes, tag: selectedTag, pet, foods },
+        {
+          onSuccess: (data) => {
+            setLastReward({ exp: data.expGained, leveledUp: data.leveledUp });
+            confetti({
+              particleCount: 120,
+              spread: 80,
+              origin: { y: 0.6 },
+            });
+            setTimeout(() => setLastReward(null), 6000);
+          },
+        }
+      );
     }
   };
 

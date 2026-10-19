@@ -18,8 +18,10 @@ import { STARTER_PETS } from '../data/petConfigs';
 import { PetCanvas } from './3d/PetCanvas';
 import { FoodTray } from './FoodTray';
 import { PomodoroTimer } from './PomodoroTimer';
+import { useResetPetMutation } from '../hooks/usePetQueries';
 
 export const PetDashboard: React.FC = () => {
+  const resetMutation = useResetPetMutation();
   const {
     pet,
     isFeeding,
@@ -29,7 +31,6 @@ export const PetDashboard: React.FC = () => {
     pokePet,
     setMood,
     toggleSleep,
-    resetPet,
   } = usePetStore();
 
   const [speechQuote, setSpeechQuote] = useState<string>(
@@ -105,10 +106,10 @@ export const PetDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Change Pet / Reset Button */}
         <button
-          onClick={resetPet}
-          className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 transition-all cursor-pointer"
+          onClick={() => resetMutation.mutate()}
+          disabled={resetMutation.isPending}
+          className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 transition-all cursor-pointer disabled:opacity-50"
           title="Chọn lại thú cưng khác"
         >
           <RotateCcw className="w-3.5 h-3.5" />

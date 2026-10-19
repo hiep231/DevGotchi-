@@ -37,15 +37,17 @@ This skill provides the architectural blueprints and design principles for the D
 
 ---
 
-## 2. Frontend State Flow (Zustand & Local Persistence)
+## 2. Frontend State Flow (TanStack Query + Zustand)
 
-The frontend uses an optimistic offline-first state architecture:
-1. **Single Source of Truth:** `src/store/usePetStore.ts`.
-2. **Local Sync:** Every mutation immediately saves to `localStorage` (`devgotchi_pet_state_v1`), so users never lose their pet or streak if they refresh or close the tab.
-3. **Remote Sync (When Backend is connected):**
-   - On initial load: Fetch latest pet state from `GET /api/pets/me`.
-   - On Focus completion: Send `POST /api/sessions/complete` with `{ minutes, tag }`.
-   - On Feed: Send `POST /api/pets/feed` with `{ foodId }`.
+The frontend uses a hybrid server-state + client-state architecture:
+1. **Server State & Data Fetching:** TanStack Query (`@tanstack/react-query`).
+   - `usePetQuery`: Fetches active pet data (`GET /api/pets/me`) with offline fallback.
+   - `useFoodsQuery`: Manages inventory items (`GET /api/foods`).
+   - `useFeedPetMutation`: Handles feeding with automatic cache invalidation and UI notification.
+   - `useCompleteSessionMutation`: Submits completed Pomodoro focus sessions.
+2. **Local UI & Animation State:** Zustand (`src/store/usePetStore.ts`).
+   - Manages high-frequency UI updates: 3D squash & stretch triggers (`pokeAnimKey`), feeding arc trajectories (`feedAnimKey`), countdown timer ticks, and visual speech quotes.
+3. **Optimistic Offline Sync:** Every mutation immediately saves to `localStorage` (`devgotchi_pet_state_v1`), ensuring zero data loss if offline or during server restarts.
 
 ---
 

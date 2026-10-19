@@ -2,13 +2,24 @@ import React from 'react';
 import { Sparkles, Utensils } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
 import { STARTER_PETS } from '../data/petConfigs';
+import { useFeedPetMutation, useFoodsQuery } from '../hooks/usePetQueries';
 
 export const FoodTray: React.FC = () => {
-  const { pet, foods, feedPet, isFeeding } = usePetStore();
+  const { pet, isFeeding, foods: fallbackFoods } = usePetStore();
+  const { data: foods = fallbackFoods } = useFoodsQuery();
+  const feedMutation = useFeedPetMutation();
 
   if (!pet) return null;
 
   const config = STARTER_PETS.find((p) => p.id === pet.type);
+
+  const handleFeed = (foodId: string) => {
+    feedMutation.mutate({
+      foodId,
+      pet,
+      foods,
+    });
+  };
 
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 backdrop-blur-xl shadow-xl">
@@ -26,14 +37,15 @@ export const FoodTray: React.FC = () => {
         {foods.map((food) => {
           const isFav = config?.favoriteFood.toLowerCase().includes(food.name.toLowerCase());
           const isAvailable = food.count > 0;
+          const isBusy = isFeeding || feedMutation.isPending;
 
           return (
             <button
               key={food.id}
-              disabled={!isAvailable || isFeeding}
-              onClick={() => feedPet(food.id)}
+              disabled={!isAvailable || isBusy}
+              onClick={() => handleFeed(food.id)}
               className={`relative p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between group ${
-                isAvailable
+                isAvailable && !isBusy
                   ? 'bg-slate-800/60 hover:bg-slate-800 border-slate-700/80 hover:border-cyan-500/60 hover:-translate-y-1 hover:shadow-lg hover:shadow-cyan-500/10 active:translate-y-0 cursor-pointer'
                   : 'bg-slate-900/40 border-slate-800/40 opacity-40 cursor-not-allowed'
               } ${isFav ? 'ring-1 ring-amber-400/50' : ''}`}

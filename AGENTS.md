@@ -19,7 +19,11 @@ Welcome to the **DevGotchi** codebase! All agents, developers, and tools working
 
 * **Framework:** React 19 + TypeScript (Strict Mode).
 * **Styling:** Tailwind CSS v4. Do NOT use inline styles except for dynamic 3D hex color tints.
-* **State Management:** Zustand.
+* **Data Fetching & Server State:** TanStack Query (`@tanstack/react-query`).
+  * Use TanStack Query for all asynchronous server state, API queries, mutations, and cache invalidation.
+  * Define query keys as typed tuples/arrays (e.g. `PET_QUERY_KEY`, `FOODS_QUERY_KEY`).
+  * Ensure offline-first optimistic synchronization.
+* **Client / UI State Management:** Zustand.
   * Keep stores atomic or modularized by domain (`usePetStore`, `useTimerStore`, etc.).
   * Always persist state updates to `localStorage` or sync with the backend.
   * Avoid deep nested mutations; always use immutable spread patterns.

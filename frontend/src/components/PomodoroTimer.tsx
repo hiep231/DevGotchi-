@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { Play, Pause, RotateCcw, Clock, CheckCircle2, Award } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
 import { useCompleteSessionMutation, useFoodsQuery } from '../hooks/usePetQueries';
+import { tg } from '../utils/telegram';
 
 const TAGS = ['Frontend', 'Backend', 'Bugfix', 'LeetCode', 'Design'];
 
@@ -13,13 +14,13 @@ export const PomodoroTimer: React.FC = () => {
 
   const [mode, setMode] = useState<'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK'>('FOCUS');
   const [selectedTag, setSelectedTag] = useState('Frontend');
-  const [duration, setDuration] = useState(25 * 60); // 25 mins in seconds
+  const [duration, setDuration] = useState(25 * 60);
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [lastReward, setLastReward] = useState<{ exp: number; leveledUp: boolean } | null>(null);
 
-  // Switch modes
   const handleModeChange = (newMode: 'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK') => {
+    tg.haptic.selection();
     setIsRunning(false);
     setMode(newMode);
     let seconds = 25 * 60;
@@ -50,9 +51,9 @@ export const PomodoroTimer: React.FC = () => {
     };
   }, [isRunning, timeLeft]);
 
-  // Complete session handler
   const handleCompleteSession = () => {
     if (mode === 'FOCUS' && pet) {
+      tg.haptic.notification('success');
       const minutes = Math.round(duration / 60);
       sessionMutation.mutate(
         { minutes, tag: selectedTag, pet, foods },
@@ -72,6 +73,7 @@ export const PomodoroTimer: React.FC = () => {
   };
 
   const togglePlay = () => {
+    tg.haptic.impact('medium');
     if (!isRunning && mode === 'FOCUS') {
       setMood('FOCUSING');
     } else if (isRunning && mode === 'FOCUS') {
@@ -81,6 +83,7 @@ export const PomodoroTimer: React.FC = () => {
   };
 
   const handleReset = () => {
+    tg.haptic.selection();
     setIsRunning(false);
     setTimeLeft(duration);
     if (mode === 'FOCUS') setMood('HAPPY');
@@ -91,78 +94,84 @@ export const PomodoroTimer: React.FC = () => {
   const progressPercent = ((duration - timeLeft) / duration) * 100;
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+    <div className="soft-card p-4 md:p-5 space-y-3.5">
       {/* Header & Modes */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
-              <Clock className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-white font-['Fredoka']">Focus Pomodoro</h3>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+            <Clock className="w-3.5 h-3.5" />
           </div>
-
-          {/* Mode Switcher */}
-          <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-semibold">
-            <button
-              onClick={() => handleModeChange('FOCUS')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                mode === 'FOCUS' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Focus 25m
-            </button>
-            <button
-              onClick={() => handleModeChange('SHORT_BREAK')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                mode === 'SHORT_BREAK' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Nghỉ 5m
-            </button>
-            <button
-              onClick={() => handleModeChange('LONG_BREAK')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                mode === 'LONG_BREAK' ? 'bg-indigo-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Nghỉ 15m
-            </button>
-          </div>
+          <h3 className="text-sm font-black text-white font-['Fredoka']">Focus Pomodoro</h3>
         </div>
 
-        {/* Tags Selection */}
-        {mode === 'FOCUS' && (
-          <div className="flex items-center gap-1.5 flex-wrap mb-4">
-            <span className="text-[11px] text-slate-400 mr-1">Chủ đề:</span>
-            {TAGS.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
-                className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
-                  selectedTag === tag
-                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
-                    : 'bg-slate-800/40 text-slate-400 border-slate-700/50 hover:bg-slate-800'
-                }`}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Tactile Mode Switcher */}
+        <div className="flex p-1 rounded-2xl bg-slate-950/80 border border-slate-800 text-[11px] font-black">
+          <button
+            onClick={() => handleModeChange('FOCUS')}
+            className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
+              mode === 'FOCUS'
+                ? 'bg-cyan-400 text-slate-950 shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            25m Focus
+          </button>
+          <button
+            onClick={() => handleModeChange('SHORT_BREAK')}
+            className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
+              mode === 'SHORT_BREAK'
+                ? 'bg-emerald-400 text-slate-950 shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            5m Nghỉ
+          </button>
+          <button
+            onClick={() => handleModeChange('LONG_BREAK')}
+            className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
+              mode === 'LONG_BREAK'
+                ? 'bg-indigo-400 text-slate-950 shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            15m
+          </button>
+        </div>
       </div>
 
-      {/* Main Timer Display */}
-      <div className="flex flex-col items-center justify-center my-4 py-2 relative">
-        {/* Circular Progress Bar Background */}
-        <div className="relative w-48 h-48 flex items-center justify-center">
+      {/* Tags Carousel */}
+      {mode === 'FOCUS' && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-[10px] text-slate-400 font-bold uppercase shrink-0 mr-1">Tag:</span>
+          {TAGS.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => {
+                tg.haptic.selection();
+                setSelectedTag(tag);
+              }}
+              className={`text-xs px-2.5 py-1 rounded-xl font-bold transition-all shrink-0 cursor-pointer ${
+                selectedTag === tag
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-xs'
+                  : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:text-slate-200'
+              }`}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Circular Progress & Time Display */}
+      <div className="flex flex-col items-center justify-center py-1 relative">
+        <div className="relative w-40 h-40 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
             <circle
               cx="50"
               cy="50"
               r="44"
-              className="text-slate-800"
-              strokeWidth="6"
+              className="text-slate-950/80"
+              strokeWidth="7"
               stroke="currentColor"
               fill="transparent"
             />
@@ -177,7 +186,7 @@ export const PomodoroTimer: React.FC = () => {
                   ? 'text-emerald-400'
                   : 'text-indigo-400'
               } transition-all duration-300`}
-              strokeWidth="6"
+              strokeWidth="7"
               strokeDasharray="276.46"
               strokeDashoffset={276.46 - (276.46 * progressPercent) / 100}
               strokeLinecap="round"
@@ -187,59 +196,57 @@ export const PomodoroTimer: React.FC = () => {
           </svg>
 
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <div className="text-4xl md:text-5xl font-black text-white font-['Fredoka'] tracking-tight">
+            <div className="text-3xl font-black text-white font-['Fredoka'] tracking-tight">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-1">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mt-0.5">
               {isRunning ? '🔥 Đang tập trung' : 'Sẵn sàng'}
             </span>
           </div>
         </div>
 
-        {/* Congratulation Toast */}
+        {/* Celebration Toast */}
         {lastReward && (
-          <div className="absolute -bottom-2 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-bold text-xs px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 animate-bounce">
-            <Award className="w-4 h-4" />
-            + {lastReward.exp} EXP & Nhận thức ăn mới! {lastReward.leveledUp ? '🎉 LEVEL UP!' : ''}
+          <div className="absolute -bottom-1 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black text-[11px] px-3.5 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-bounce z-20">
+            <Award className="w-3.5 h-3.5" />
+            + {lastReward.exp} EXP & Nhận quà! {lastReward.leveledUp ? '🎉 LEVEL UP!' : ''}
           </div>
         )}
       </div>
 
-      {/* Timer Controls */}
-      <div className="flex items-center justify-center gap-4 mt-2">
+      {/* 3D Tactile Action Controls */}
+      <div className="flex items-center justify-center gap-3 pt-1">
         <button
           onClick={handleReset}
-          className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 hover:border-slate-600 transition-all active:scale-95 cursor-pointer"
+          className="w-12 h-12 btn-3d-slate rounded-2xl"
           title="Đặt lại"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-4 h-4 text-slate-300" />
         </button>
 
         <button
           onClick={togglePlay}
-          className={`px-8 py-3.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer font-['Fredoka'] text-base ${
-            isRunning
-              ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-amber-400/20'
-              : 'bg-gradient-to-r from-cyan-400 to-emerald-400 hover:brightness-110 text-slate-950 shadow-cyan-400/25'
+          className={`flex-1 py-3.5 ${
+            isRunning ? 'btn-3d-amber' : 'btn-3d-cyan'
           }`}
         >
           {isRunning ? (
             <>
-              <Pause className="w-5 h-5 fill-current" /> Tạm dừng
+              <Pause className="w-5 h-5 fill-slate-950" /> Tạm dừng
             </>
           ) : (
             <>
-              <Play className="w-5 h-5 fill-current" /> Bắt đầu ngay
+              <Play className="w-5 h-5 fill-slate-950" /> Bắt đầu Focus
             </>
           )}
         </button>
 
         <button
           onClick={handleCompleteSession}
-          className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 hover:border-slate-600 transition-all active:scale-95 cursor-pointer"
-          title="Hoàn thành sớm phiên này"
+          className="w-12 h-12 btn-3d-slate rounded-2xl"
+          title="Hoàn thành sớm"
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
         </button>
       </div>
     </div>

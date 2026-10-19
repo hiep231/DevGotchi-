@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   Flame,
   Moon,
   Sun,
   Hand,
   RotateCcw,
-  Volume2,
   Bug,
-  Smile,
   Zap,
   Heart,
   Fish,
+  Timer,
+  Utensils,
+  Smile,
 } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
 import { STARTER_PETS } from '../data/petConfigs';
@@ -19,6 +19,9 @@ import { PetCanvas } from './3d/PetCanvas';
 import { FoodTray } from './FoodTray';
 import { PomodoroTimer } from './PomodoroTimer';
 import { useResetPetMutation } from '../hooks/usePetQueries';
+import { tg } from '../utils/telegram';
+
+type ActiveTab = 'PET' | 'FOCUS' | 'FOOD';
 
 export const PetDashboard: React.FC = () => {
   const resetMutation = useResetPetMutation();
@@ -33,6 +36,7 @@ export const PetDashboard: React.FC = () => {
     toggleSleep,
   } = usePetStore();
 
+  const [activeTab, setActiveTab] = useState<ActiveTab>('PET');
   const [speechQuote, setSpeechQuote] = useState<string>(
     'Chào người anh em coder! Hôm nay chúng ta sẽ giải quyết bug nào đây?'
   );
@@ -41,19 +45,28 @@ export const PetDashboard: React.FC = () => {
 
   const config = STARTER_PETS.find((p) => p.id === pet.type) || STARTER_PETS[0];
 
-  // Quick interactions
+  // Quick interactions with Haptic Feedback
   const handlePoke = () => {
+    tg.haptic.impact('medium');
     pokePet();
     const quotes = [
-      'Ái chà! Nhột quá đi mất haha!',
+      'Ái chà! Nhột quá haha!',
       'Gõ phím tiếp đi, đừng chọc trẫm nữa!',
       'Được xoa đầu sướng quá, thêm 1 Pomodoro nào!',
       'Bé pet tăng 3 điểm hạnh phúc nè!',
+      'Hôm nay bạn code đỉnh thật đấy!',
     ];
     setSpeechQuote(quotes[Math.floor(Math.random() * quotes.length)]);
   };
 
+  const handleToggleSleep = () => {
+    tg.haptic.impact('light');
+    toggleSleep();
+    setSpeechQuote(pet.isSleeping ? 'Oa... đã ngủ dậy rồi, sẵn sàng code!' : 'Khò khò... trẫm đi ngủ nạp năng lượng đây Zzz');
+  };
+
   const handleToggleDizzy = () => {
+    tg.haptic.impact('rigid');
     if (pet.mood === 'DIZZY') {
       setMood('HAPPY');
       setSpeechQuote('Phù... đã hết chóng mặt rồi! Tỉnh táo lại rồi!');
@@ -63,199 +76,250 @@ export const PetDashboard: React.FC = () => {
     }
   };
 
+  const handleResetPet = () => {
+    tg.haptic.impact('heavy');
+    resetMutation.mutate();
+  };
+
   return (
-    <div className="min-h-screen bg-radial from-slate-900 via-slate-950 to-black text-slate-100 flex flex-col justify-between p-4 md:p-6">
-      {/* 1. Top Navigation Bar */}
-      <header className="max-w-6xl mx-auto w-full flex items-center justify-between pb-4 border-b border-slate-800/80">
-        <div className="flex items-center gap-3">
+    <div className="flex-1 flex flex-col justify-between p-3.5 md:p-5 select-none relative pb-20">
+      {/* 1. Playful Top Bar */}
+      <header className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-slate-950 shadow-md font-['Fredoka'] text-lg"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-slate-950 shadow-md font-['Fredoka'] text-lg border-b-2 border-black/30"
             style={{ backgroundColor: config.primaryColor }}
           >
             {config.name[0]}
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white font-['Fredoka']">{pet.customName}</h2>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-base font-black text-white font-['Fredoka']">{pet.customName}</h2>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 shadow-xs">
                 Lv.{pet.level}
               </span>
             </div>
-            <div className="text-xs text-slate-400 font-['JetBrains_Mono']">{config.species}</div>
+            <div className="text-[10px] text-slate-400 font-['JetBrains_Mono']">{config.archetype}</div>
           </div>
         </div>
 
-        {/* Middle: EXP & Streak */}
-        <div className="hidden sm:flex items-center gap-6">
-          <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-3.5 py-1.5 rounded-2xl shadow-sm">
-            <Flame className="w-4 h-4 text-orange-400" />
-            <span className="text-xs font-bold text-slate-200">{pet.streak} ngày streak</span>
+        {/* Streak & Change Pet */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-2xl shadow-xs">
+            <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+            <span className="text-xs font-black text-amber-300 font-['JetBrains_Mono']">{pet.streak}d</span>
           </div>
 
-          <div className="w-44 space-y-1">
-            <div className="flex justify-between text-[11px] text-slate-400">
-              <span>EXP</span>
-              <span className="text-slate-300 font-semibold">{pet.exp} / {pet.maxExp}</span>
-            </div>
-            <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-300"
-                style={{ width: `${Math.min(100, (pet.exp / pet.maxExp) * 100)}%` }}
-              />
-            </div>
-          </div>
+          <button
+            onClick={handleResetPet}
+            disabled={resetMutation.isPending}
+            className="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 flex items-center justify-center border border-slate-700/60 transition-all cursor-pointer active:scale-95"
+            title="Đổi thú cưng khác"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
         </div>
-
-        <button
-          onClick={() => resetMutation.mutate()}
-          disabled={resetMutation.isPending}
-          className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 transition-all cursor-pointer disabled:opacity-50"
-          title="Chọn lại thú cưng khác"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Đổi thú cưng</span>
-        </button>
       </header>
 
-      {/* 2. Main Center 3D Stage */}
-      <main className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 my-4 items-center">
-        {/* Left Column: 3D Pet & Interactions */}
-        <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
-          {/* Glowing Aura */}
+      {/* EXP Progress Strip */}
+      <div className="mt-2.5 space-y-1">
+        <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
+          <span>Kinh nghiệm (EXP)</span>
+          <span className="text-cyan-300 font-['JetBrains_Mono']">{pet.exp} / {pet.maxExp}</span>
+        </div>
+        <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
           <div
-            className="absolute w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-700"
-            style={{ backgroundColor: config.primaryColor }}
+            className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-300 shadow-sm shadow-cyan-400/50"
+            style={{ width: `${Math.min(100, (pet.exp / pet.maxExp) * 100)}%` }}
           />
+        </div>
+      </div>
 
-          {/* Speech Bubble */}
-          <div className="relative mb-2 z-20 max-w-sm px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-xl backdrop-blur-md text-xs text-slate-200 text-center font-['Fredoka'] tracking-wide">
-            💬 {speechQuote}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 border-r border-b border-slate-700/80 rotate-45" />
-          </div>
+      {/* 2. Main Content Based on Active Tab */}
+      <main className="my-auto py-2">
+        {activeTab === 'PET' && (
+          <div className="flex flex-col items-center justify-center">
+            {/* Speech Bubble */}
+            <div className="relative mb-1 max-w-xs px-3.5 py-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-xl backdrop-blur-md text-xs text-slate-100 text-center font-['Fredoka'] tracking-wide animate-float">
+              💬 {speechQuote}
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-slate-900 border-r border-b border-slate-700/80 rotate-45" />
+            </div>
 
-          {/* 3D Canvas with click interaction */}
-          <div
-            onClick={handlePoke}
-            className="relative w-full h-[280px] md:h-[340px] flex items-center justify-center z-10"
-          >
-            <PetCanvas
-              type={pet.type}
-              mood={pet.mood}
-              isFeeding={isFeeding}
-              pokeTrigger={pokeAnimKey}
-              feedTrigger={feedAnimKey}
-              className="w-full h-full"
-            />
-
-            {/* Glowing Feeding Item overlay when feeding (like in user reference image!) */}
-            {isFeeding && activeFoodFeeding && (
-              <div className="absolute bottom-6 flex flex-col items-center pointer-events-none animate-bounce z-30">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-t from-orange-500/40 via-amber-300/30 to-transparent blur-md absolute -inset-2" />
-                <span className="text-4xl drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] animate-pulse">
-                  {activeFoodFeeding.icon}
-                </span>
-                <span className="text-[10px] font-bold text-amber-300 bg-slate-950/80 px-2 py-0.5 rounded-full mt-1 border border-amber-400/40">
-                  {activeFoodFeeding.name}!
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Interaction Pills Bar */}
-          <div className="flex items-center gap-2 mt-2 z-20 flex-wrap justify-center">
-            <button
+            {/* 3D Canvas Stage */}
+            <div
               onClick={handlePoke}
-              className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+              className="relative w-full h-[260px] flex items-center justify-center cursor-pointer"
             >
-              <Hand className="w-3.5 h-3.5 text-cyan-400" /> Chọc bé
-            </button>
+              {/* Glowing Aura */}
+              <div
+                className="absolute w-56 h-56 rounded-full blur-3xl opacity-25 pointer-events-none transition-all duration-700"
+                style={{ backgroundColor: config.primaryColor }}
+              />
 
-            <button
-              onClick={toggleSleep}
-              className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-            >
-              {pet.isSleeping ? (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400" /> Đánh thức
-                </>
-              ) : (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-indigo-400" /> Cho ngủ
-                </>
+              <PetCanvas
+                type={pet.type}
+                mood={pet.mood}
+                isFeeding={isFeeding}
+                pokeTrigger={pokeAnimKey}
+                feedTrigger={feedAnimKey}
+                className="w-full h-full"
+              />
+
+              {/* Feeding Float Sticker */}
+              {isFeeding && activeFoodFeeding && (
+                <div className="absolute bottom-4 flex flex-col items-center pointer-events-none animate-bounce z-30">
+                  <span className="text-4xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.9)] animate-pulse">
+                    {activeFoodFeeding.icon}
+                  </span>
+                  <span className="text-[10px] font-black text-amber-300 bg-slate-950/90 px-2 py-0.5 rounded-full mt-1 border border-amber-400/50 shadow-md">
+                    +{activeFoodFeeding.hungerRestored} No bụng!
+                  </span>
+                </div>
               )}
-            </button>
+            </div>
 
-            <button
-              onClick={handleToggleDizzy}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer ${
-                pet.mood === 'DIZZY'
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
-                  : 'bg-slate-800/80 hover:bg-slate-700 border-slate-700 text-slate-200'
-              }`}
-              title="Bật mắt xoáy chóng mặt giống ảnh mẫu!"
-            >
-              <Bug className="w-3.5 h-3.5 text-rose-400" />
-              {pet.mood === 'DIZZY' ? 'Hết bug' : 'Gặp Bug @@'}
-            </button>
+            {/* Tactile Quick Action Buttons */}
+            <div className="flex items-center gap-2 mt-1 flex-wrap justify-center">
+              <button
+                onClick={handlePoke}
+                className="px-3.5 py-2 btn-3d-cyan text-xs"
+              >
+                <Hand className="w-3.5 h-3.5" /> Chọc bé
+              </button>
+
+              <button
+                onClick={handleToggleSleep}
+                className="px-3.5 py-2 btn-3d-slate text-xs"
+              >
+                {pet.isSleeping ? (
+                  <>
+                    <Sun className="w-3.5 h-3.5 text-amber-400" /> Thức dậy
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-3.5 h-3.5 text-indigo-400" /> Cho ngủ
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleToggleDizzy}
+                className={`px-3.5 py-2 text-xs rounded-2xl border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer flex items-center gap-1.5 font-bold shadow-md ${
+                  pet.mood === 'DIZZY'
+                    ? 'bg-rose-500 text-slate-950 border-rose-800'
+                    : 'bg-slate-800 text-slate-200 border-slate-950'
+                }`}
+                title="Bật biểu cảm mắt xoáy tít!"
+              >
+                <Bug className="w-3.5 h-3.5 text-rose-400" />
+                {pet.mood === 'DIZZY' ? 'Hết bug' : 'Gặp Bug @@'}
+              </button>
+            </div>
+
+            {/* Soft Pill Vitals Bar */}
+            <div className="w-full grid grid-cols-3 gap-2 mt-4">
+              <div className="soft-card p-2.5 text-center">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-bold mb-0.5">
+                  <Fish className="w-3 h-3 text-orange-400" /> No bụng
+                </div>
+                <div className="text-xs font-black text-slate-100 font-['JetBrains_Mono']">{pet.hunger}/100</div>
+                <div className="h-1.5 w-full bg-slate-950 rounded-full mt-1 overflow-hidden p-0.5">
+                  <div
+                    className="h-full bg-orange-400 rounded-full transition-all duration-300"
+                    style={{ width: `${pet.hunger}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="soft-card p-2.5 text-center">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-bold mb-0.5">
+                  <Zap className="w-3 h-3 text-amber-400" /> Năng lượng
+                </div>
+                <div className="text-xs font-black text-slate-100 font-['JetBrains_Mono']">{pet.energy}/100</div>
+                <div className="h-1.5 w-full bg-slate-950 rounded-full mt-1 overflow-hidden p-0.5">
+                  <div
+                    className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                    style={{ width: `${pet.energy}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="soft-card p-2.5 text-center">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-bold mb-0.5">
+                  <Heart className="w-3 h-3 text-rose-400" /> Hạnh phúc
+                </div>
+                <div className="text-xs font-black text-slate-100 font-['JetBrains_Mono']">{pet.happiness}/100</div>
+                <div className="h-1.5 w-full bg-slate-950 rounded-full mt-1 overflow-hidden p-0.5">
+                  <div
+                    className="h-full bg-rose-400 rounded-full transition-all duration-300"
+                    style={{ width: `${pet.happiness}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
+        )}
 
-          {/* Real-time Pet Vitals (Hunger, Energy, Happiness) */}
-          <div className="w-full max-w-md grid grid-cols-3 gap-3 mt-4">
-            {/* Hunger */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-2.5 text-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 mb-1">
-                <Fish className="w-3 h-3 text-orange-400" /> No bụng
-              </div>
-              <div className="text-sm font-bold text-slate-100">{pet.hunger}/100</div>
-              <div className="h-1.5 w-full bg-slate-800 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-orange-400 rounded-full transition-all duration-300"
-                  style={{ width: `${pet.hunger}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Energy */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-2.5 text-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 mb-1">
-                <Zap className="w-3 h-3 text-amber-400" /> Năng lượng
-              </div>
-              <div className="text-sm font-bold text-slate-100">{pet.energy}/100</div>
-              <div className="h-1.5 w-full bg-slate-800 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                  style={{ width: `${pet.energy}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Happiness */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-2.5 text-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 mb-1">
-                <Heart className="w-3 h-3 text-rose-400" /> Hạnh phúc
-              </div>
-              <div className="text-sm font-bold text-slate-100">{pet.happiness}/100</div>
-              <div className="h-1.5 w-full bg-slate-800 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-rose-400 rounded-full transition-all duration-300"
-                  style={{ width: `${pet.happiness}%` }}
-                />
-              </div>
-            </div>
+        {activeTab === 'FOCUS' && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <PomodoroTimer />
           </div>
-        </div>
+        )}
 
-        {/* Right Column: Pomodoro Focus Timer & Food Tray */}
-        <div className="lg:col-span-6 flex flex-col gap-4">
-          <PomodoroTimer />
-          <FoodTray />
-        </div>
+        {activeTab === 'FOOD' && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <FoodTray />
+          </div>
+        )}
       </main>
 
-      {/* 3. Footer */}
-      <footer className="max-w-6xl mx-auto w-full text-center text-xs text-slate-500 pt-3 border-t border-slate-800/80">
-        DevGotchi &copy; 2026 • Giữ kỷ luật Pomodoro, nuôi dưỡng linh thú công nghệ của bạn.
-      </footer>
+      {/* 3. Telegram Mini App Fixed Bottom Thumb-Zone Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/95 border-t border-slate-800/80 px-4 py-2 backdrop-blur-xl z-50 flex items-center justify-around">
+        <button
+          onClick={() => {
+            tg.haptic.selection();
+            setActiveTab('PET');
+          }}
+          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${
+            activeTab === 'PET' ? 'text-cyan-400 scale-105' : 'text-slate-500 hover:text-slate-400'
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl ${activeTab === 'PET' ? 'bg-cyan-500/20' : ''}`}>
+            <Smile className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-black font-['Fredoka']">Linh Thú</span>
+        </button>
+
+        <button
+          onClick={() => {
+            tg.haptic.selection();
+            setActiveTab('FOCUS');
+          }}
+          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${
+            activeTab === 'FOCUS' ? 'text-cyan-400 scale-105' : 'text-slate-500 hover:text-slate-400'
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl ${activeTab === 'FOCUS' ? 'bg-cyan-500/20' : ''}`}>
+            <Timer className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-black font-['Fredoka']">Pomodoro</span>
+        </button>
+
+        <button
+          onClick={() => {
+            tg.haptic.selection();
+            setActiveTab('FOOD');
+          }}
+          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${
+            activeTab === 'FOOD' ? 'text-cyan-400 scale-105' : 'text-slate-500 hover:text-slate-400'
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl ${activeTab === 'FOOD' ? 'bg-cyan-500/20' : ''}`}>
+            <Utensils className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-black font-['Fredoka']">Túi Đồ Ăn</span>
+        </button>
+      </nav>
     </div>
   );
 };

@@ -1,0 +1,25 @@
+{
+  "name": "devgotchi-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DevGotchi - 3D Virtual Pet Productivity & Gamification for Developers",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run start:dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "build": "npm run build:frontend && npm run build:backend"
+  },
+  "keywords": [
+    "tamagotchi",
+    "3d",
+    "threejs",
+    "productivity",
+    "pomodoro",
+    "gamification",
+    "developer-tools"
+  ],
+  "author": "",
+  "license": "MIT"
+}

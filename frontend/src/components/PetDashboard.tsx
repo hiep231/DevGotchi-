@@ -20,6 +20,7 @@ import { FoodTray } from './FoodTray';
 import { PomodoroTimer } from './PomodoroTimer';
 import { useResetPetMutation } from '../hooks/usePetQueries';
 import { tg } from '../utils/telegram';
+import { petApi } from '../api/petApi';
 
 type ActiveTab = 'PET' | 'FOCUS' | 'FOOD';
 
@@ -46,17 +47,26 @@ export const PetDashboard: React.FC = () => {
   const config = STARTER_PETS.find((p) => p.id === pet.type) || STARTER_PETS[0];
 
   // Quick interactions with Haptic Feedback
-  const handlePoke = () => {
+  const handlePoke = async () => {
     tg.haptic.impact('medium');
     pokePet();
-    const quotes = [
+    const fallbackQuotes = [
       'Ái chà! Nhột quá haha!',
       'Gõ phím tiếp đi, đừng chọc trẫm nữa!',
       'Được xoa đầu sướng quá, thêm 1 Pomodoro nào!',
       'Bé pet tăng 3 điểm hạnh phúc nè!',
       'Hôm nay bạn code đỉnh thật đấy!',
     ];
-    setSpeechQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+    // Immediate playful reaction
+    setSpeechQuote(fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)]);
+
+    // Dynamic AI reaction from backend
+    try {
+      const aiQuote = await petApi.generateSpeech(pet.customName, pet.type, pet.mood);
+      if (aiQuote) setSpeechQuote(aiQuote);
+    } catch {
+      // Fallback kept
+    }
   };
 
   const handleToggleSleep = () => {

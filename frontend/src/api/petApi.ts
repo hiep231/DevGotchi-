@@ -186,4 +186,22 @@ export const petApi = {
       // Offline fallback
     }
   },
+
+  // Generate AI Pet Speech
+  async generateSpeech(petName: string, petType: string, mood: string, lastTag?: string): Promise<string> {
+    try {
+      const res = await fetch('/api/ai/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ petName, petType, mood, lastTag }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.quote) return json.quote;
+      }
+    } catch {
+      // Offline fallback
+    }
+    return 'Gõ phím tiếp đi, trẫm luôn ở bên bạn! ✨';
+  },
 };

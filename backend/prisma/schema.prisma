@@ -1,0 +1,80 @@
+// DevGotchi Prisma Schema
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String         @id @default(uuid())
+  telegramId   BigInt?        @unique
+  username     String?
+  firstName    String?
+  streak       Int            @default(0)
+  lastActive   DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  pet          Pet?
+  sessions     FocusSession[]
+  inventory    InventoryItem[]
+}
+
+enum PetType {
+  PUFFY
+  BYTEY
+  GOLEMY
+  OCTY
+}
+
+enum PetMood {
+  HAPPY
+  FOCUSING
+  DIZZY
+  HUNGRY
+  SLEEPING
+}
+
+model Pet {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              PetType   @default(PUFFY)
+  name              String    @default("Puffy")
+  level             Int       @default(1)
+  exp               Int       @default(0)
+  maxExp            Int       @default(100)
+  hunger            Int       @default(70) // 0 - 100
+  energy            Int       @default(85) // 0 - 100
+  happiness         Int       @default(90) // 0 - 100
+  mood              PetMood   @default(HAPPY)
+  isSleeping        Boolean   @default(false)
+  totalFocusMinutes Int       @default(0)
+  lastFedAt         DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model FocusSession {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  durationMin  Int
+  tag          String    @default("General")
+  expGained    Int       @default(0)
+  completedAt  DateTime  @default(now())
+}
+
+model InventoryItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodId    String   // shrimp, fish_ram, docker_jelly, coffee_donut
+  count     Int      @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, foodId])
+}

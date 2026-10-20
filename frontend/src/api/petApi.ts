@@ -1,14 +1,20 @@
 import { FoodItem, PetState, PetType } from '../types/pet';
 import { INITIAL_FOODS, STARTER_PETS } from '../data/petConfigs';
+import { tg } from '../utils/telegram';
 
 const STORAGE_KEY = 'devgotchi_pet_state_v1';
 const FOOD_STORAGE_KEY = 'devgotchi_food_state_v1';
+
+function getTelegramIdParam(): string {
+  const tid = tg.user?.id;
+  return tid ? `?telegramId=${tid}` : '';
+}
 
 export const petApi = {
   // Fetch active pet state
   async getPet(): Promise<PetState | null> {
     try {
-      const res = await fetch('/api/pets/me');
+      const res = await fetch(`/api/pets/me${getTelegramIdParam()}`);
       if (res.ok) {
         const json = await res.json();
         const p = json.data;
@@ -82,7 +88,7 @@ export const petApi = {
     localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(INITIAL_FOODS));
 
     try {
-      await fetch('/api/pets/adopt', {
+      await fetch(`/api/pets/adopt${getTelegramIdParam()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, name: newPet.customName }),
@@ -122,7 +128,7 @@ export const petApi = {
     localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
 
     try {
-      const res = await fetch('/api/pets/feed', {
+      const res = await fetch(`/api/pets/feed${getTelegramIdParam()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ foodId }),
@@ -196,7 +202,7 @@ export const petApi = {
     localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
 
     try {
-      await fetch('/api/sessions/complete', {
+      await fetch(`/api/sessions/complete${getTelegramIdParam()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ durationMinutes: minutes, tag }),

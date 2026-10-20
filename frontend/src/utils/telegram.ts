@@ -56,8 +56,8 @@ export const tg = {
     if (app) {
       app.ready();
       app.expand();
-      app.setHeaderColor?.('#0f172a');
-      app.setBackgroundColor?.('#020617');
+      app.setHeaderColor?.('#FFF6E5');
+      app.setBackgroundColor?.('#FFF6E5');
     }
   },
 

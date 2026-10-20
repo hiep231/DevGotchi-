@@ -16,7 +16,15 @@ export class SessionService {
   async completeSession(dto: CompleteSessionDto) {
     const baseExp = dto.durationMinutes * 4;
     const petRes = await this.petService.getMyPet();
-    const pet = petRes.data;
+    let pet = petRes.data;
+
+    if (!pet) {
+      const defaultAdopt = await this.petService.adoptPet({
+        type: PetTypeEnum.PUFFY,
+        name: 'Puffy',
+      });
+      pet = defaultAdopt.data;
+    }
 
     let bonusMultiplier = 0;
     if (pet.type === PetTypeEnum.PUFFY && dto.durationMinutes <= 25) {

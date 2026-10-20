@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300" fill="none">
+  <!-- Ground Shadow -->
+  <ellipse cx="150" cy="285" rx="64" ry="9" fill="#1B2A4A" opacity="0.16"/>
+  <!-- Rig Group -->
+  <g id="rig">
+    <!-- Tail Fin -->
+    <path d="M226 170 C256 140 286 146 292 170 C286 198 256 206 226 184Z" fill="#1E8F99" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M250 170 L282 165 M250 177 L281 182" stroke="#1B2A4A" stroke-width="3" opacity="0.45" stroke-linecap="round"/>
+
+    <!-- Side Fins -->
+    <ellipse cx="84" cy="206" rx="20" ry="11" transform="rotate(-25 84 206)" fill="#1E8F99" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="216" cy="210" rx="20" ry="11" transform="rotate(25 216 210)" fill="#1E8F99" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Body Spikes -->
+    <defs>
+      <clipPath id="pb_clean">
+        <circle cx="150" cy="170" r="84"/>
+      </clipPath>
+    </defs>
+    <!-- Spikes along circle -->
+    <path transform="translate(77.26 128) rotate(-120)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(66 170) rotate(-90)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(77.26 212) rotate(-60)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(108 242.74) rotate(-30)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(150 86) rotate(0)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(192 97.26) rotate(30)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(222.74 128) rotate(60)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(234 170) rotate(90)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(222.74 212) rotate(120)" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Puffer Circle Body -->
+    <circle cx="150" cy="170" r="84" fill="#2FB7B3" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g clip-path="url(#pb_clean)">
+      <ellipse cx="150" cy="240" rx="70" ry="48" fill="#FFF1B8"/>
+    </g>
+    <circle cx="150" cy="170" r="84" fill="none" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Green RAM Module on Belly -->
+    <rect x="108" y="214" width="84" height="22" rx="4" fill="#3DAA5C" stroke="#1B2A4A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="118" y="219" width="16" height="11" rx="2" fill="#1B2A4A"/>
+    <rect x="142" y="219" width="16" height="11" rx="2" fill="#1B2A4A"/>
+    <rect x="166" y="219" width="16" height="11" rx="2" fill="#1B2A4A"/>
+    <!-- Gold Pins -->
+    <rect x="112" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="120" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="128" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="136" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="144" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="152" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="160" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="168" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="176" y="236" width="5" height="5" fill="#FFC93C"/>
+    <rect x="184" y="236" width="5" height="5" fill="#FFC93C"/>
+
+    <!-- Highlight -->
+    <ellipse cx="104" cy="118" rx="17" ry="6" transform="rotate(-35 104 118)" fill="#fff" opacity="0.85"/>
+    <circle cx="90" cy="132" r="3.5" fill="#fff" opacity="0.85"/>
+
+    <!-- Face -->
+    <ellipse cx="94" cy="178" rx="11" ry="6" fill="#FF8FA3" opacity="0.6"/>
+    <ellipse cx="206" cy="178" rx="11" ry="6" fill="#FF8FA3" opacity="0.6"/>
+
+    <!-- Glasses -->
+    <circle cx="120" cy="150" r="21" fill="#fff" fill-opacity="0.25" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="180" cy="150" r="21" fill="#fff" fill-opacity="0.25" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M141 148 Q150 143 159 148" fill="none" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Eyes Behind Glasses -->
+    <ellipse cx="120" cy="150" rx="10.5" ry="13.3" fill="#1B2A4A"/>
+    <circle cx="116.5" cy="144" r="4.6" fill="#fff"/>
+    <circle cx="123.5" cy="155" r="2.3" fill="#fff"/>
+    <ellipse cx="180" cy="150" rx="10.5" ry="13.3" fill="#1B2A4A"/>
+    <circle cx="176.5" cy="144" r="4.6" fill="#fff"/>
+    <circle cx="183.5" cy="155" r="2.3" fill="#fff"/>
+
+    <!-- Mouth -->
+    <path d="M138 182 Q144 190 150 182 Q156 190 162 182" fill="none" stroke="#1B2A4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

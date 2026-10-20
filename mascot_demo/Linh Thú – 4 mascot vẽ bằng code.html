@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Linh Thú – 4 mascot vẽ bằng code</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF6E5;--sky:#DFF4FF;--ink:#2D2A4A;--soft:#6B6890;--line:#E8DCC4;--surface:#fff;--primary:#FFB703;--grape:#8E7CFF;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1E1B33;--sky:#2F3A66;--ink:#F4EEFF;--soft:#B3AED6;--line:#3A3660;--surface:#2A2745;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1E1B33;--sky:#2F3A66;--ink:#F4EEFF;--soft:#B3AED6;--line:#3A3660;--surface:#2A2745;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:Nunito,ui-rounded,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px 16px 28px}
+header{width:100%;max-width:420px}
+h1{font:600 28px/1.1 Fredoka,ui-rounded,system-ui,sans-serif;margin:0}
+.sub{margin:4px 0 0;color:var(--soft);font-size:14px;line-height:1.4}
+.stage{position:relative;width:100%;max-width:420px;border:2px solid var(--ink);border-radius:24px;background:linear-gradient(180deg,var(--sky),var(--bg));box-shadow:0 4px 0 var(--ink);overflow:hidden;touch-action:pan-y}
+svg{display:block;width:100%;height:auto;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.cloud{animation:drift 14s ease-in-out infinite alternate}
+#c2{animation-duration:19s;animation-direction:alternate-reverse}
+@keyframes drift{to{transform:translateX(22px)}}
+.bubble{position:absolute;top:12%;right:7%;background:var(--surface);color:var(--ink);border:2px solid var(--ink);border-radius:16px 16px 16px 4px;padding:6px 12px;font:600 15px Fredoka,ui-rounded,system-ui,sans-serif;opacity:0;transform:translateY(6px) scale(.92);transition:opacity .18s,transform .18s;pointer-events:none}
+.bubble.on{opacity:1;transform:none}
+.picker{display:flex;align-items:center;gap:14px}
+.nav,.chip{border:2px solid var(--ink);background:var(--surface);color:var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer;transition:transform .08s,box-shadow .08s}
+.nav{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;padding:0}
+.nav svg{width:22px;height:22px;cursor:pointer}
+.chip{font:600 15px Fredoka,ui-rounded,system-ui,sans-serif;min-height:44px;padding:8px 16px;border-radius:999px}
+.chip[aria-pressed="true"]{background:var(--primary);color:#2D2A4A}
+.nav:active,.chip:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.nav:focus-visible,.chip:focus-visible{outline:3px solid var(--grape);outline-offset:2px}
+.dots{display:flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--surface);border-radius:999px;padding:0 14px;height:36px}
+.dot{width:10px;height:10px;border-radius:99px;background:var(--line);transition:width .25s}
+.dot.on{width:28px;background:var(--primary);box-shadow:inset 0 0 0 2px var(--ink)}
+.moods{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:420px}
+.hint{margin:0;max-width:420px;text-align:center;color:var(--soft);font-size:14px;line-height:1.4}
+@media (prefers-reduced-motion:reduce){.cloud{animation:none}.bubble,.dot{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="name">Cache Cat</h1>
+  <p class="sub" id="tag">Hay quên nhưng đáng yêu</p>
+</header>
+
+<div class="stage" id="stage">
+<svg id="svg" viewBox="0 0 300 330" role="img" aria-label="Linh thú vẽ bằng SVG, mắt nhìn theo con trỏ">
+  <g class="cloud" id="c1" opacity=".92"><ellipse cx="62" cy="54" rx="28" ry="11" fill="#fff"/><ellipse cx="82" cy="47" rx="17" ry="10" fill="#fff"/></g>
+  <g class="cloud" id="c2" opacity=".92"><ellipse cx="236" cy="96" rx="24" ry="9" fill="#fff"/><ellipse cx="220" cy="90" rx="14" ry="8" fill="#fff"/></g>
+  <ellipse cx="150" cy="298" rx="128" ry="26" fill="#7DD06F" stroke="#1B2A4A" stroke-width="4"/>
+  <ellipse cx="150" cy="292" rx="112" ry="17" fill="#A2E58F"/>
+  <ellipse id="shadow" cx="150" cy="291" rx="62" ry="8" fill="#4E9A45" opacity=".55"/>
+  <g id="slot"></g>
+</svg>
+<div class="bubble" id="bubble" role="status"></div>
+</div>
+
+<div class="picker">
+  <button class="nav" id="prev" aria-label="Linh thú trước"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="dots" id="dots"></div>
+  <button class="nav" id="next" aria-label="Linh thú sau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+</div>
+<div class="moods" role="group" aria-label="Biểu cảm">
+  <button class="chip" data-m="idle">Bình thường</button>
+  <button class="chip" data-m="happy">Vui</button>
+  <button class="chip" data-m="hungry">Đói</button>
+  <button class="chip" data-m="sleepy">Buồn ngủ</button>
+  <button class="chip" data-m="eating">Đang ăn</button>
+</div>
+<p class="hint">Vuốt ngang hoặc bấm mũi tên để đổi bé. Di chuột hoặc chạm màn hình để bé nhìn theo, chạm vào bé để chọc.</p>
+
+<script>
+const $ = s => document.querySelector(s), INK = '#1B2A4A', RED = '#E8505B', CREAM = '#FFF1D6';
+const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const st = (w = 5) => `stroke="${INK}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+const limb = (d, w, fill, wig) => `<g data-w="${wig}"><path d="${d}" fill="none" stroke="${INK}" stroke-width="${w}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${fill}" stroke-width="${w - 10}" stroke-linecap="round"/></g>`;
+const hl = (x, y, r = 14) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r / 2.8}" transform="rotate(-35 ${x} ${y})" fill="#fff" opacity=".85"/><circle cx="${x - 14}" cy="${y + 14}" r="3.5" fill="#fff" opacity=".85"/>`;
+const blush = (a, b, y, c = '#FF8FA3') => `<ellipse cx="${a}" cy="${y}" rx="11" ry="6" fill="${c}" opacity=".6"/><ellipse cx="${b}" cy="${y}" rx="11" ry="6" fill="${c}" opacity=".6"/>`;
+
+/* ---------- 4 nhân vật: mỗi con là 1 hàm trả về chuỗi SVG ---------- */
+const CAT = () => { const P = '#B79CF0'; return `<g id="rig">
+ ${limb('M200 252 C252 258 266 208 240 192 C227 184 214 198 226 206', 22, P, '204,250,9,2.4,0,0').replace('<g data-w="204,250,9,2.4,0,0">', '<g id="tail" data-w="204,250,9,2.4,0,0">')}
+ <g id="bodyg"><ellipse cx="150" cy="232" rx="60" ry="54" fill="${P}" ${st()}/><ellipse cx="150" cy="244" rx="34" ry="36" fill="${CREAM}"/>
+  <ellipse cx="93" cy="238" rx="11" ry="20" transform="rotate(14 93 238)" fill="${P}" ${st()}/><ellipse cx="207" cy="238" rx="11" ry="20" transform="rotate(-14 207 238)" fill="${P}" ${st()}/></g>
+ <ellipse cx="124" cy="282" rx="21" ry="12" fill="${P}" ${st()}/><ellipse cx="176" cy="282" rx="21" ry="12" fill="${P}" ${st()}/>
+ <g id="headg">
+  <g data-w="112,100,0,0,0,1"><path d="M86 114 L76 50 Q75 41 84 45 L138 74Z" fill="${P}" ${st()}/><path d="M91 100 L86 66 L120 84Z" fill="#FF9FB8"/></g>
+  <g data-w="188,100,0,0,0,-1"><path d="M214 114 L224 50 Q225 41 216 45 L162 74Z" fill="${P}" ${st()}/><path d="M209 100 L214 66 L180 84Z" fill="#FF9FB8"/></g>
+  <ellipse cx="150" cy="128" rx="80" ry="66" fill="${P}" ${st()}/>
+  <path d="M72 128 C70 56 230 56 228 128" fill="none" stroke="${INK}" stroke-width="14" stroke-linecap="round"/><path d="M72 128 C70 56 230 56 228 128" fill="none" stroke="#4A5AA8" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="68" cy="130" rx="13" ry="21" fill="#FFE7B3" ${st()}/><ellipse cx="232" cy="130" rx="13" ry="21" fill="#FFE7B3" ${st()}/>
+  ${hl(98, 110)}<ellipse cx="150" cy="162" rx="27" ry="17" fill="${CREAM}"/>
+  <g id="face">${blush(96, 204, 156)}<path d="M144 152 Q150 148 156 152 Q150 160 144 152Z" fill="#FF7F9C" ${st(2.5)}/><g id="eyes"></g><g id="mouth"></g><g id="extra"></g></g>
+ </g></g>`; };
+
+const OCTO = () => { const C = '#F5705F', mir = d => d.replace(/(-?\d+(\.\d+)?) (-?\d+)/g, (m, x, _, y) => `${300 - x} ${y}`);
+  const L1 = 'M112 222 C78 232 52 262 70 282 C84 294 106 284 98 270 C93 262 83 267 88 274', L2 = 'M134 226 C122 254 126 282 144 286 C152 288 156 280 150 276';
+  return `<g id="rig"><g id="bodyg">
+ ${limb(L1, 26, C, '112,222,5,2.2,0')}${limb(mir(L1), 26, C, '188,222,5,2.2,1.6')}${limb(L2, 26, C, '134,226,4,2.6,.8')}${limb(mir(L2), 26, C, '166,226,4,2.6,2.2')}</g>
+ <g data-w="214,186,7,3,0"><circle cx="248" cy="132" r="15" fill="#CFEFFF" ${st(4)}/><path d="M240 126 q3 -6 9 -7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M214 186 C242 190 252 170 247 150" fill="none" stroke="${INK}" stroke-width="20" stroke-linecap="round"/><path d="M214 186 C242 190 252 170 247 150" fill="none" stroke="${C}" stroke-width="11" stroke-linecap="round"/></g>
+ <g id="headg"><ellipse cx="150" cy="146" rx="78" ry="72" fill="${C}" ${st()}/><ellipse cx="150" cy="200" rx="26" ry="10" fill="${CREAM}"/>
+  <circle cx="118" cy="98" r="7" fill="#FFD2C2"/><circle cx="142" cy="88" r="5" fill="#FFD2C2"/><circle cx="178" cy="100" r="6" fill="#FFD2C2"/>${hl(104, 108, 16)}
+  <g id="face">${blush(92, 208, 170, '#FFB3C1')}<g id="eyes"></g><g id="mouth"></g><g id="extra"></g></g></g></g>`; };
+
+const PUFFER = () => { const T = '#2FB7B3', D = '#1E8F99';
+  const spikes = [-120, -90, -60, -30, 0, 30, 60, 90, 120].map(a => { const r = a * Math.PI / 180; return `<path transform="translate(${150 + 84 * Math.sin(r)} ${170 - 84 * Math.cos(r)}) rotate(${a})" d="M-10 5 L0 -17 L10 5Z" fill="#FF9F45" ${st(4)}/>`; }).join('');
+  const pins = Array.from({length: 10}, (_, i) => `<rect x="${112 + i * 8}" y="236" width="5" height="5" fill="#FFC93C"/>`).join('');
+  return `<g id="rig"><g id="bodyg">
+ <g data-w="228,176,10,2.8,0"><path d="M226 170 C256 140 286 146 292 170 C286 198 256 206 226 184Z" fill="${D}" ${st()}/><path d="M250 170 L282 165 M250 177 L281 182" stroke="${INK}" stroke-width="3" opacity=".45" stroke-linecap="round"/></g>
+ <g data-w="98,200,12,3.2,1"><ellipse cx="84" cy="206" rx="20" ry="11" transform="rotate(-25 84 206)" fill="${D}" ${st()}/></g>
+ <g data-w="204,208,-12,3.2,0"><ellipse cx="216" cy="210" rx="20" ry="11" transform="rotate(25 216 210)" fill="${D}" ${st()}/></g></g>
+ <g id="headg"><defs><clipPath id="pb"><circle cx="150" cy="170" r="84"/></clipPath></defs>${spikes}
+  <circle cx="150" cy="170" r="84" fill="${T}" ${st()}/><g clip-path="url(#pb)"><ellipse cx="150" cy="240" rx="70" ry="48" fill="#FFF1B8"/></g><circle cx="150" cy="170" r="84" fill="none" ${st()}/>
+  <rect x="108" y="214" width="84" height="22" rx="4" fill="#3DAA5C" ${st(3.5)}/><rect x="118" y="219" width="16" height="11" rx="2" fill="${INK}"/><rect x="142" y="219" width="16" height="11" rx="2" fill="${INK}"/><rect x="166" y="219" width="16" height="11" rx="2" fill="${INK}"/>${pins}
+  ${hl(104, 118, 17)}
+  <g id="face">${blush(94, 206, 178)}<circle cx="120" cy="150" r="21" fill="#fff" fill-opacity=".25" ${st(4)}/><circle cx="180" cy="150" r="21" fill="#fff" fill-opacity=".25" ${st(4)}/><path d="M141 148 Q150 143 159 148" fill="none" ${st(4)}/><g id="eyes"></g><g id="mouth"></g><g id="extra"></g></g></g></g>`; };
+
+const DINO = () => { const M = '#7ED9A6';
+  const plates = [[92, 88, -38], [208, 88, 38], [72, 116, -62], [228, 116, 62]].map(([x, y, r], i) => `<g data-w="${x},${y},4,2.4,${i}"><path transform="translate(${x} ${y}) rotate(${r})" d="M-16 6 Q0 -34 16 6Z" fill="#FFD79A" ${st(4.5)}/></g>`).join('');
+  return `<g id="rig"><g id="bodyg">
+ <g data-w="200,250,6,2.2,0"><path d="M198 222 C242 226 272 248 278 280 C252 272 226 278 196 276Z" fill="${M}" ${st()}/></g>
+ <ellipse cx="150" cy="236" rx="56" ry="52" fill="${M}" ${st()}/><ellipse cx="150" cy="248" rx="32" ry="36" fill="${CREAM}"/>
+ <ellipse cx="97" cy="242" rx="10" ry="18" transform="rotate(16 97 242)" fill="${M}" ${st()}/><ellipse cx="203" cy="242" rx="10" ry="18" transform="rotate(-16 203 242)" fill="${M}" ${st()}/></g>
+ <ellipse cx="122" cy="282" rx="21" ry="12" fill="${M}" ${st()}/><ellipse cx="178" cy="282" rx="21" ry="12" fill="${M}" ${st()}/>
+ <g id="headg">${plates}<ellipse cx="150" cy="134" rx="78" ry="64" fill="${M}" ${st()}/>${hl(100, 112, 15)}
+  <path d="M94 96 C92 50 208 50 206 96Z" fill="#4CC9F0" ${st()}/><path d="M188 92 C214 88 238 96 242 106 C222 110 198 106 186 100Z" fill="#2AA8D8" ${st()}/>
+  <text x="150" y="84" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="600" font-size="17" fill="#fff">{ }</text>
+  <g id="face">${blush(94, 206, 162)}<circle cx="142" cy="158" r="2.4" fill="${INK}" opacity=".7"/><circle cx="158" cy="158" r="2.4" fill="${INK}" opacity=".7"/><g id="eyes"></g><g id="mouth"></g><g id="extra"></g></g></g></g>`; };
+
+const CH = [
+  {n: 'Cache Cat', t: 'Hay quên nhưng đáng yêu', svg: CAT, hp: [150, 190], f: {ex: [118, 182], ey: 138, mx: 150, my: 166, s: 1, am: [196, 88], zz: [206, 94]}},
+  {n: 'Bug Octo', t: 'Soi ra bug trước cả khi bạn chạy code', svg: OCTO, hp: [150, 200], f: {ex: [120, 180], ey: 148, mx: 150, my: 174, s: 1.05, am: [200, 92], zz: [208, 100]}},
+  {n: 'Ram Puffer', t: 'Ăn bao nhiêu RAM cũng chưa no', svg: PUFFER, hp: [150, 200], f: {ex: [120, 180], ey: 150, mx: 150, my: 182, s: .95, am: [206, 96], zz: [208, 104]}},
+  {n: 'Debug Dino', t: 'Đội mũ ngược, code xuôi', svg: DINO, hp: [150, 190], f: {ex: [118, 182], ey: 142, mx: 150, my: 172, s: 1, am: [196, 110], zz: [212, 100]}}
+];
+
+/* ---------- Bộ mặt dùng chung: mắt, miệng, biểu cảm ---------- */
+let F, cur = 0, mood = 'idle', el = {}, wigs = [];
+const eyeAt = (x, inner) => `<g class="eye" data-cx="${x}" data-cy="${F.ey}">${inner}</g>`;
+const dot = x => eyeAt(x, `<ellipse cx="${x}" cy="${F.ey}" rx="${11 * F.s}" ry="${14 * F.s}" fill="${INK}"/><circle class="hl" cx="${x - 3.5}" cy="${F.ey - 6}" r="4.6" fill="#fff"/><circle class="hl" cx="${x + 3.5}" cy="${F.ey + 5}" r="2.3" fill="#fff"/>`);
+const arc = d => x => eyeAt(x, `<path d="M${x - 12} ${F.ey + d} Q${x} ${F.ey - d * 1.6} ${x + 12} ${F.ey + d}" fill="none" ${st(5.5)}/>`);
+const star = x => eyeAt(x, `<path transform="translate(${x} ${F.ey})" d="M0-15L4-4 15 0 4 4 0 15-4 4-15 0-4-4Z" fill="#FFD166" ${st(2.5)}/>`);
+const both = f => F.ex.map(f).join('');
+function face(m) {
+  const {ex, ey, mx, my, am, zz} = F, [ax, ay] = am, [zx, zy] = zz;
+  const mo = {
+    idle: `<path d="M${mx - 12} ${my} Q${mx - 6} ${my + 8} ${mx} ${my} Q${mx + 6} ${my + 8} ${mx + 12} ${my}" fill="none" ${st(3)}/>`,
+    happy: `<path d="M${mx - 11} ${my - 1} Q${mx} ${my + 18} ${mx + 11} ${my - 1}Z" fill="${RED}" ${st(3)}/>`,
+    hungry: `<ellipse cx="${mx}" cy="${my + 4}" rx="7" ry="6" fill="${RED}" ${st(3)}/>`,
+    sleepy: `<ellipse cx="${mx}" cy="${my + 3}" rx="4" ry="3.5" fill="none" ${st(3)}/>`,
+    eating: `<path d="M${mx - 14} ${my - 2} Q${mx} ${my + 24} ${mx + 14} ${my - 2}Z" fill="${RED}" ${st(3)}/>`
+  }[m];
+  const eyes = {idle: both(dot), happy: both(arc(7)), hungry: both(dot), sleepy: both(arc(-5)), eating: both(star)}[m];
+  const extra = m === 'hungry'
+    ? `<path d="M${ex[0] - 15} ${ey - 20} L${ex[0] + 12} ${ey - 12} M${ex[1] + 15} ${ey - 20} L${ex[1] - 12} ${ey - 12}" fill="none" ${st(5)}/><path d="M${ax} ${ay} q6 2 6 8 M${ax + 18} ${ay} q-6 2 -6 8 M${ax} ${ay + 16} q6 -2 6 -8 M${ax + 18} ${ay + 16} q-6 -2 -6 -8" fill="none" stroke="${RED}" stroke-width="3.5" stroke-linecap="round"/>`
+    : m === 'sleepy' ? `<text x="${zx}" y="${zy}" font-family="Fredoka,sans-serif" font-weight="600" font-size="24" fill="#6B6890">Z</text><text x="${zx + 22}" y="${zy - 22}" font-family="Fredoka,sans-serif" font-weight="600" font-size="16" fill="#6B6890">z</text>` : '';
+  el.eyes.innerHTML = eyes; el.mouth.innerHTML = mo; el.extra.innerHTML = extra;
+}
+const SAY = {idle: 'Meo~', happy: 'Hihi!', hungry: 'Đói quá!', sleepy: 'Zzz…', eating: 'Ngon ghê!'};
+const TAPS = ['Nhột quá!', 'Hihi!', 'Chơi tiếp đi!', 'Cho ăn đi!'];
+
+/* ---------- Trạng thái & điều khiển ---------- */
+let gx = 0, gy = 0, tx = 0, ty = 0, lastPtr = -1e9, nextGlance = 0, sq = -1e9, twitch = 0, nextBlink = 2500, blinkAt = -1e9, raf, bubT, swiped = false;
+const svg = $('#svg'), shadow = $('#shadow'), bub = $('#bubble'), dots = $('#dots');
+const clamp = v => Math.max(-1, Math.min(1, v));
+function aim(x, y) {
+  const r = svg.getBoundingClientRect();
+  tx = clamp((x - (r.left + r.width / 2)) / (r.width * .6)); ty = clamp((y - (r.top + r.height * .4)) / (r.height * .6)); lastPtr = performance.now();
+}
+function say(t) { bub.textContent = t; bub.classList.add('on'); clearTimeout(bubT); bubT = setTimeout(() => bub.classList.remove('on'), 1600); }
+function setMood(m, quiet) {
+  mood = m; face(m);
+  document.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m));
+  if (!quiet) say(SAY[m]);
+  if (m === 'eating' || m === 'happy') { sq = performance.now(); twitch = 1; }
+}
+function setChar(i) {
+  cur = (i + CH.length) % CH.length; const c = CH[cur]; F = c.f;
+  $('#slot').innerHTML = c.svg();
+  ['rig', 'bodyg', 'headg', 'face', 'eyes', 'mouth', 'extra'].forEach(id => el[id] = $('#' + id));
+  wigs = [...el.rig.querySelectorAll('[data-w]')].map(e => { const [px, py, amp, sp, ph, tw] = e.dataset.w.split(',').map(Number); return {e, px, py, amp, sp, ph, tw: tw || 0}; });
+  $('#name').textContent = c.n; $('#tag').textContent = c.t;
+  dots.innerHTML = CH.map((_, k) => `<span class="dot${k === cur ? ' on' : ''}"></span>`).join('');
+  setMood(mood, true); sq = performance.now(); twitch = 1; say(c.n);
+}
+addEventListener('pointermove', e => aim(e.clientX, e.clientY), {passive: true});
+addEventListener('pointerdown', e => aim(e.clientX, e.clientY), {passive: true});
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => setMood(b.dataset.m)));
+$('#prev').addEventListener('click', () => setChar(cur - 1));
+$('#next').addEventListener('click', () => setChar(cur + 1));
+let x0 = 0;
+$('#stage').addEventListener('pointerdown', e => { x0 = e.clientX; });
+$('#stage').addEventListener('pointerup', e => { const d = e.clientX - x0; if (Math.abs(d) > 50) { swiped = true; setChar(cur + (d < 0 ? 1 : -1)); } });
+svg.addEventListener('click', () => {
+  if (swiped) { swiped = false; return; }
+  sq = performance.now(); twitch = 1;
+  try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch (e) {}
+  say(TAPS[Math.floor(Math.random() * TAPS.length)]);
+});
+
+function frame(t) {
+  const s = t / 1000, k = rm ? 0 : 1;
+  if (t - lastPtr > 3000 && t > nextGlance) { tx = (Math.random() * 2 - 1) * .9; ty = (Math.random() * 2 - 1) * .5; nextGlance = t + 1800 + Math.random() * 2200; }
+  gx += (tx - gx) * .15; gy += (ty - gy) * .15;
+  const br = 1 + .022 * Math.sin(s * 2.1) * k, fy = Math.sin(s * 1.5) * 3 * k;
+  const e = (t - sq) / 380, on = e >= 0 && e < 1, q = on ? Math.sin(e * Math.PI * 2) * (1 - e) : 0, jump = on ? 12 * Math.sin(e * Math.PI) : 0;
+  const [hx, hy] = CH[cur].hp; twitch *= .93; const ta = Math.sin(t / 35) * 9 * twitch;
+  el.rig.setAttribute('transform', `translate(0 ${fy - jump}) translate(150 286) scale(${1 + .07 * q} ${1 - .1 * q}) translate(-150 -286)`);
+  el.bodyg.setAttribute('transform', `translate(150 286) scale(1 ${br}) translate(-150 -286)`);
+  el.headg.setAttribute('transform', `translate(${gx * 2} ${-(br - 1) * 70 + gy * 1.5}) rotate(${gx * 3.5} ${hx} ${hy})`);
+  el.face.setAttribute('transform', `translate(${gx * 3.5} ${gy * 2.5})`);
+  el.eyes.setAttribute('transform', `translate(${gx * 3} ${gy * 2})`);
+  wigs.forEach(w => w.e.setAttribute('transform', `rotate(${w.amp * Math.sin(s * w.sp + w.ph) * k + w.tw * ta} ${w.px} ${w.py})`));
+  shadow.setAttribute('rx', 62 * (1 + (fy - jump) / 80));
+  if (t > nextBlink && !rm) { blinkAt = t; nextBlink = t + 3000 + Math.random() * 3000; }
+  const b = (t - blinkAt) / 140, sc = b >= 0 && b < 1 ? 1 - .9 * Math.sin(b * Math.PI) : 1;
+  el.eyes.querySelectorAll('.eye').forEach(g => { const x = g.dataset.cx, y = g.dataset.cy; g.setAttribute('transform', `translate(${x} ${y}) scale(1 ${sc}) translate(${-x} ${-y})`); });
+  el.eyes.querySelectorAll('.hl').forEach(h => h.setAttribute('transform', `translate(${-gx * .9} ${-gy * .9})`));
+  raf = requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) cancelAnimationFrame(raf); else raf = requestAnimationFrame(frame); });
+setChar(0); setMood('idle', true);
+raf = requestAnimationFrame(frame);
+</script>
+</body>
+</html>

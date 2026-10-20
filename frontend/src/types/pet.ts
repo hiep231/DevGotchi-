@@ -2,10 +2,14 @@ export type PetType = 'PUFFY' | 'BYTEY' | 'GOLEMY' | 'OCTY';
 
 export type PetMood = 'HAPPY' | 'FOCUSING' | 'DIZZY' | 'HUNGRY' | 'SLEEPING';
 
+export type UserRole = 'DEV' | 'QA' | 'DESIGN' | 'PRODUCT' | 'ALL';
+
 export interface PetConfig {
   id: PetType;
   name: string;
   species: string;
+  roleBadge: string;
+  targetRole: string;
   archetype: string;
   tagline: string;
   description: string;

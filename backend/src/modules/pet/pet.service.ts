@@ -22,22 +22,7 @@ export class PetService {
   constructor(private readonly prisma: PrismaService) {}
 
   // In-memory fallback if Database is not yet running
-  private inMemoryPet = {
-    id: 'pet_default_demo',
-    userId: 'user_default',
-    type: PetTypeEnum.PUFFY,
-    name: 'Puffy',
-    level: 1,
-    exp: 0,
-    maxExp: 100,
-    hunger: 70,
-    energy: 85,
-    happiness: 90,
-    mood: 'HAPPY',
-    isSleeping: false,
-    totalFocusMinutes: 0,
-    lastFedAt: new Date(),
-  };
+  private inMemoryPet: any = null;
 
   async getMyPet(telegramId?: number) {
     try {
@@ -63,16 +48,21 @@ export class PetService {
 
   async adoptPet(dto: AdoptPetDto, telegramId?: number) {
     const updated = {
-      ...this.inMemoryPet,
       id: `pet_${Date.now()}`,
+      userId: 'user_default',
       type: dto.type,
       name: dto.name.trim(),
+      customName: dto.name.trim(),
       level: 1,
       exp: 0,
       maxExp: 100,
       hunger: 70,
+      energy: 85,
       happiness: 90,
+      streak: 1,
       mood: 'HAPPY',
+      isSleeping: false,
+      totalFocusMinutes: 0,
       lastFedAt: new Date(),
     };
     this.inMemoryPet = updated;
@@ -116,6 +106,10 @@ export class PetService {
   }
 
   async feedPet(dto: FeedPetDto) {
+    if (!this.inMemoryPet) {
+      throw new NotFoundException('No pet found to feed. Please adopt a pet first.');
+    }
+
     const nutrition = FOOD_NUTRITION[dto.foodId] || { hunger: 20, happiness: 10 };
     const isFav = FAVORITE_FOOD_MAP[this.inMemoryPet.type] === dto.foodId;
 
@@ -134,22 +128,7 @@ export class PetService {
   }
 
   async resetPet() {
-    this.inMemoryPet = {
-      id: `pet_${Date.now()}`,
-      userId: 'user_default',
-      type: PetTypeEnum.PUFFY,
-      name: 'Puffy',
-      level: 1,
-      exp: 0,
-      maxExp: 100,
-      hunger: 70,
-      energy: 85,
-      happiness: 90,
-      mood: 'HAPPY',
-      isSleeping: false,
-      totalFocusMinutes: 0,
-      lastFedAt: new Date(),
-    };
+    this.inMemoryPet = null;
     return { success: true, message: 'Pet reset successfully' };
   }
 }

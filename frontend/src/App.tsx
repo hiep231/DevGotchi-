@@ -3,10 +3,11 @@ import { usePetStore } from './store/usePetStore';
 import { usePetQuery } from './hooks/usePetQueries';
 import { StarterSelection } from './components/StarterSelection';
 import { PetDashboard } from './components/PetDashboard';
+import { TapEffectOverlay } from './components/ui/TapEffectOverlay';
 import { tg } from './utils/telegram';
 
 export const App: React.FC = () => {
-  const { pet: localPet } = usePetStore();
+  const { pet: localPet, setPet } = usePetStore();
   const { data: serverPet, isLoading } = usePetQuery();
 
   // Initialize Telegram WebApp on launch
@@ -14,13 +15,22 @@ export const App: React.FC = () => {
     tg.init();
   }, []);
 
-  const activePet = serverPet ?? localPet;
+  // Sync server pet to zustand store whenever server query settles
+  useEffect(() => {
+    if (serverPet !== undefined) {
+      setPet(serverPet);
+    }
+  }, [serverPet, setPet]);
 
-  if (isLoading && !localPet) {
+  const activePet = localPet ?? serverPet;
+
+  if (isLoading && !activePet) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center gap-3">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-cyan-400 border-t-transparent shadow-lg shadow-cyan-500/20" />
-        <span className="text-xs font-bold text-slate-400 font-['Fredoka'] animate-pulse">
+      <div className="min-h-screen bg-[#FFF6E5] text-[#2D2A4A] flex flex-col items-center justify-center gap-3">
+        <div className="w-12 h-12 rounded-2xl bg-[var(--primary)] border-2 border-[var(--ink)] shadow-[0_4px_0_var(--ink)] flex items-center justify-center animate-bounce">
+          <span className="text-xl">🐾</span>
+        </div>
+        <span className="text-sm font-heading font-extrabold text-[var(--ink-soft)] tracking-wide">
           Đang nạp DevGotchi...
         </span>
       </div>
@@ -28,9 +38,12 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex justify-center">
+    <div className="min-h-screen bg-[#F5EDE0] text-[#2D2A4A] flex justify-center">
+      {/* Global Interactive Tap/Click Particle & Haptic System */}
+      <TapEffectOverlay />
+
       {/* Mobile-first Telegram Web App Viewport Container */}
-      <div className="w-full max-w-md min-h-screen flex flex-col relative bg-radial from-slate-900 via-slate-950 to-black border-x border-slate-900/60 shadow-2xl overflow-y-auto">
+      <div className="w-full max-w-md min-h-screen flex flex-col relative bg-[#FFF6E5] border-x-2 border-[#E8DCC4] shadow-[0_0_30px_rgba(45,42,74,0.08)] overflow-y-auto">
         {!activePet ? <StarterSelection /> : <PetDashboard />}
       </div>
     </div>

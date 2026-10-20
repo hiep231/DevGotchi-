@@ -12,9 +12,11 @@ interface PetStore {
   pokeAnimKey: number;
 
   // Actions
+  setPet: (pet: PetState | null) => void;
   setSelectedStarter: (id: PetType) => void;
   adoptPet: (type: PetType, customName: string) => void;
   feedPet: (foodId: string) => boolean;
+  applyFeeding: (food: FoodItem, updatedPet: PetState, updatedFoods: FoodItem[]) => void;
   pokePet: () => void;
   setMood: (mood: PetMood) => void;
   toggleSleep: () => void;
@@ -38,7 +40,13 @@ const getInitialPet = (): PetState | null => {
 const getInitialFoods = (): FoodItem[] => {
   try {
     const saved = localStorage.getItem(FOOD_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_FOODS;
+    if (!saved) return INITIAL_FOODS;
+    const parsed: FoodItem[] = JSON.parse(saved);
+    // Keep saved counts, but seamlessly add new foods from INITIAL_FOODS
+    return INITIAL_FOODS.map((initFood) => {
+      const existing = parsed.find((p) => p.id === initFood.id);
+      return existing ? { ...initFood, count: existing.count } : initFood;
+    });
   } catch {
     return INITIAL_FOODS;
   }
@@ -52,6 +60,19 @@ export const usePetStore = create<PetStore>((set, get) => ({
   activeFoodFeeding: null,
   feedAnimKey: 0,
   pokeAnimKey: 0,
+
+  setPet: (pet: PetState | null) => {
+    if (pet) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pet));
+      } catch {}
+    } else {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    }
+    set({ pet });
+  },
 
   setSelectedStarter: (id: PetType) => set({ selectedStarterId: id }),
 
@@ -121,6 +142,23 @@ export const usePetStore = create<PetStore>((set, get) => ({
     }, 1800);
 
     return true;
+  },
+
+  applyFeeding: (food: FoodItem, updatedPet: PetState, updatedFoods: FoodItem[]) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
+
+    set((state) => ({
+      pet: updatedPet,
+      foods: updatedFoods,
+      isFeeding: true,
+      activeFoodFeeding: food,
+      feedAnimKey: state.feedAnimKey + 1,
+    }));
+
+    setTimeout(() => {
+      get().endFeedingAnim();
+    }, 1800);
   },
 
   endFeedingAnim: () => {

@@ -5,6 +5,7 @@ import { STARTER_PETS } from '../data/petConfigs';
 import { useAdoptPetMutation } from '../hooks/usePetQueries';
 import { PetCanvas } from './3d/PetCanvas';
 import { tg } from '../utils/telegram';
+import { IconButton } from './ui/IconButton';
 
 export const StarterSelection: React.FC = () => {
   const adoptMutation = useAdoptPetMutation();
@@ -26,8 +27,8 @@ export const StarterSelection: React.FC = () => {
   const handleAdopt = () => {
     tg.haptic.notification('success');
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 120,
+      spread: 75,
       origin: { y: 0.6 },
     });
     adoptMutation.mutate({
@@ -37,45 +38,55 @@ export const StarterSelection: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-4 md:p-6 text-slate-100 select-none">
+    <div className="flex-1 flex flex-col justify-between p-4 text-[var(--ink)] select-none">
       {/* Top Header */}
-      <header className="text-center space-y-1.5 pt-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[11px] font-bold uppercase tracking-wider shadow-sm">
-          <Sparkles className="w-3 h-3 text-cyan-300 animate-pulse" />
-          DevGotchi • Telegram Mini App
+      <header className="text-center space-y-1 pt-1">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--primary-tint)] border border-[#E09A00]/40 text-[var(--ink)] text-[11px] font-heading font-extrabold uppercase tracking-wider shadow-xs">
+          <Sparkles className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
+          <span>DevGotchi • Telegram Mini App</span>
         </div>
-        <h1 className="text-2xl md:text-3xl font-black text-white font-['Fredoka'] tracking-tight">
+        <h1 className="text-2xl font-heading font-black text-[var(--ink)] tracking-tight">
           Chọn Thú Cưng Khởi Đầu
         </h1>
-        <p className="text-slate-400 text-xs max-w-xs mx-auto">
-          Linh thú 3D đồng hành, thúc đẩy kỷ luật code mỗi ngày!
+        <p className="text-[var(--ink-soft)] text-xs max-w-xs mx-auto font-medium">
+          Linh thú 3D đồng hành, cùng bạn hoàn thành từng phiên code mỗi ngày!
         </p>
       </header>
 
-      {/* 3D Pet Showcase Card */}
-      <div className="flex flex-col items-center justify-center relative my-auto py-2">
-        {/* Soft Glowing Aura */}
+      {/* 3D Pet Showcase Stage */}
+      <div className="flex flex-col items-center justify-center my-2">
         <div
-          className="absolute w-56 h-56 rounded-full blur-3xl opacity-30 transition-all duration-700 pointer-events-none"
-          style={{ backgroundColor: currentConfig.primaryColor }}
-        />
+          className="relative w-full h-[250px] rounded-3xl border-2 border-[var(--ink)] shadow-[0_4px_0_var(--ink)] overflow-hidden flex flex-col items-center justify-between p-2 select-none"
+          style={{
+            background: 'linear-gradient(180deg, var(--bg-sky) 0%, #FFF6E5 100%)',
+          }}
+        >
+          {/* 3D Pet Canvas */}
+          <div className="relative w-full h-[190px] flex items-center justify-center z-10">
+            <PetCanvas type={currentConfig.id} mood="HAPPY" className="w-full h-full" />
+          </div>
 
-        {/* 3D Pet Canvas */}
-        <div className="relative w-full h-[260px] flex items-center justify-center z-10">
-          <PetCanvas type={currentConfig.id} mood="HAPPY" className="w-full h-full" />
+          {/* Grassy Pedestal */}
+          <div className="relative w-44 h-7 flex items-center justify-center -mt-3 z-0">
+            <div className="absolute w-36 h-4 bg-[#2D2A4A]/15 rounded-full blur-[2px]" />
+            <div className="w-36 h-5 bg-[#A7E8BD] border-2 border-[var(--ink)] rounded-full shadow-[0_2.5px_0_var(--ink)] flex items-center justify-center">
+              <div className="w-28 h-2 bg-[#84D8A2] rounded-full" />
+            </div>
+          </div>
         </div>
 
         {/* Tactile Carousel Controls */}
-        <div className="flex items-center gap-4 mt-1 z-20">
-          <button
+        <div className="flex items-center gap-4 mt-2.5 z-20">
+          <IconButton
+            variant="sticker"
+            size={42}
             onClick={handlePrev}
-            className="w-10 h-10 rounded-2xl bg-slate-800 border-b-4 border-slate-950 active:border-b-0 active:translate-y-1 text-slate-200 flex items-center justify-center transition-all cursor-pointer shadow-md"
             title="Thú cưng trước"
           >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+            <ChevronLeft className="w-5 h-5 text-[var(--ink)]" />
+          </IconButton>
 
-          <div className="flex gap-2 items-center px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800">
+          <div className="flex gap-2 items-center px-3.5 py-1.5 rounded-full bg-white border-2 border-[var(--ink)] shadow-[0_2px_0_var(--ink)]">
             {STARTER_PETS.map((pet, idx) => (
               <button
                 key={pet.id}
@@ -85,108 +96,113 @@ export const StarterSelection: React.FC = () => {
                 }}
                 className={`h-2.5 rounded-full transition-all cursor-pointer ${
                   idx === currentIndex
-                    ? 'w-6 bg-cyan-400 shadow-sm shadow-cyan-400/50'
-                    : 'w-2 bg-slate-700 hover:bg-slate-600'
+                    ? 'w-6 bg-[var(--primary)] border border-[var(--ink)] shadow-xs'
+                    : 'w-2 bg-[var(--line-strong)] hover:bg-[var(--ink-soft)]'
                 }`}
                 title={pet.name}
               />
             ))}
           </div>
 
-          <button
+          <IconButton
+            variant="sticker"
+            size={42}
             onClick={handleNext}
-            className="w-10 h-10 rounded-2xl bg-slate-800 border-b-4 border-slate-950 active:border-b-0 active:translate-y-1 text-slate-200 flex items-center justify-center transition-all cursor-pointer shadow-md"
             title="Thú cưng tiếp theo"
           >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+            <ChevronRight className="w-5 h-5 text-[var(--ink)]" />
+          </IconButton>
         </div>
       </div>
 
-      {/* Gamified Soft UI Details Card */}
-      <div className="soft-card p-4 md:p-5 space-y-3.5 my-2">
-        {/* Badges & Name */}
-        <div className="flex items-start justify-between">
+      {/* Details Sticker Card */}
+      <div className="card-sticker p-4 space-y-3 bg-white">
+        {/* Name & Archetype Tag */}
+        <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-black text-white font-['Fredoka']">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-heading font-black text-[var(--ink)]">
                 {currentConfig.name}
               </h2>
-              <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs"
-                style={{
-                  backgroundColor: `${currentConfig.primaryColor}25`,
-                  color: currentConfig.primaryColor,
-                  border: `1px solid ${currentConfig.primaryColor}50`,
-                }}
-              >
-                {currentConfig.archetype}
+              <span className="text-[11px] font-heading font-black px-2.5 py-0.5 rounded-full bg-[var(--primary-tint)] text-[var(--ink)] border border-[#E09A00]/40 shadow-xs">
+                {currentConfig.roleBadge}
               </span>
             </div>
-            <p className="text-slate-400 text-[11px] font-['JetBrains_Mono'] mt-0.5">
-              {currentConfig.species} • "{currentConfig.tagline}"
+            <div className="text-xs font-heading font-extrabold text-[var(--grape-deep)] mt-1">
+              🎯 {currentConfig.targetRole}
+            </div>
+            <p className="text-[var(--ink-soft)] text-xs mt-0.5 font-medium">
+              "{currentConfig.tagline}"
             </p>
           </div>
         </div>
 
-        {/* Stats Pills */}
+        {/* 3 Stats Chips */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-2 text-center">
-            <span className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-              <Zap className="w-3 h-3 text-amber-400" /> Focus
+          <div className="bg-[#FFF9EE] border border-[var(--line)] rounded-2xl p-2 text-center">
+            <span className="text-[10px] font-heading font-bold text-[var(--ink-soft)] flex items-center justify-center gap-1">
+              <Zap className="w-3 h-3 text-amber-500" /> Focus
             </span>
-            <div className="text-xs font-black text-slate-200 mt-0.5">{currentConfig.stats.focusBonus}/100</div>
+            <div className="text-xs font-heading font-black text-[var(--ink)] mt-0.5 tabular-nums">
+              {currentConfig.stats.focusBonus}/100
+            </div>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-2 text-center">
-            <span className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-              <Shield className="w-3 h-3 text-cyan-400" /> Kháng
+
+          <div className="bg-[#FFF9EE] border border-[var(--line)] rounded-2xl p-2 text-center">
+            <span className="text-[10px] font-heading font-bold text-[var(--ink-soft)] flex items-center justify-center gap-1">
+              <Shield className="w-3 h-3 text-[var(--sky)]" /> Kháng
             </span>
-            <div className="text-xs font-black text-slate-200 mt-0.5">{currentConfig.stats.decayResistance}/100</div>
+            <div className="text-xs font-heading font-black text-[var(--ink)] mt-0.5 tabular-nums">
+              {currentConfig.stats.decayResistance}/100
+            </div>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-2 text-center">
-            <span className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-              <Heart className="w-3 h-3 text-rose-400" /> Vui vẻ
+
+          <div className="bg-[#FFF9EE] border border-[var(--line)] rounded-2xl p-2 text-center">
+            <span className="text-[10px] font-heading font-bold text-[var(--ink-soft)] flex items-center justify-center gap-1">
+              <Heart className="w-3 h-3 text-[var(--coral)] fill-[var(--coral)]" /> Vui vẻ
             </span>
-            <div className="text-xs font-black text-slate-200 mt-0.5">{currentConfig.stats.initialHappiness}/100</div>
+            <div className="text-xs font-heading font-black text-[var(--ink)] mt-0.5 tabular-nums">
+              {currentConfig.stats.initialHappiness}/100
+            </div>
           </div>
         </div>
 
-        {/* Passive Perk */}
-        <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 flex items-start gap-2.5">
-          <div className="p-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold mt-0.5">
+        {/* Passive Perk Box */}
+        <div className="bg-[var(--primary-tint)] border border-[#E09A00]/40 rounded-2xl p-2.5 flex items-start gap-2.5">
+          <div className="p-1.5 rounded-xl bg-[var(--primary)] border border-[var(--ink)] text-[var(--ink)] font-bold mt-0.5 shadow-xs">
             <Wand2 className="w-3.5 h-3.5" />
           </div>
           <div>
-            <span className="text-[11px] font-extrabold text-amber-300 block">Kỹ Năng Bị Động:</span>
-            <span className="text-[11px] text-slate-300 leading-tight block">{currentConfig.passivePerk}</span>
+            <span className="text-xs font-heading font-black text-[var(--ink)] block">
+              Kỹ Năng Bị Động:
+            </span>
+            <span className="text-[11px] text-[var(--ink-soft)] font-medium leading-tight block">
+              {currentConfig.passivePerk}
+            </span>
           </div>
         </div>
 
-        {/* Name input & 3D Tactile Adopt Button */}
-        <div className="space-y-2 pt-1">
+        {/* Pet Name Input & 56px Chunky Adopt Button */}
+        <div className="space-y-2.5 pt-1">
           <input
             type="text"
             placeholder={`Đặt tên cho bé (mặc định: ${currentConfig.name})`}
             value={petName}
             onChange={(e) => setPetName(e.target.value)}
             maxLength={18}
-            className="w-full px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400 font-['Fredoka'] transition-colors"
+            className="w-full px-4 py-2.5 rounded-2xl bg-white border-2 border-[var(--line)] text-[var(--ink)] placeholder-[var(--ink-soft)]/60 text-xs font-heading font-bold focus:outline-none focus:border-[var(--ink)] transition-colors shadow-xs"
           />
 
           <button
             onClick={handleAdopt}
             disabled={adoptMutation.isPending}
-            className="w-full py-3.5 btn-3d-cyan text-sm tracking-wide"
+            className="w-full h-14 btn-chunky btn-chunky-primary text-base flex items-center justify-center gap-2"
           >
-            <Sparkles className="w-4 h-4 fill-slate-950" />
-            Nhận nuôi {petName.trim() || currentConfig.name}!
+            <span>Nhận Nuôi {currentConfig.name}</span>
+            <Sparkles className="w-4 h-4" />
           </button>
         </div>
       </div>
-
-      <footer className="text-center text-[10px] text-slate-500 pt-2 pb-1">
-        DevGotchi Mini App • Chạm để tương tác 3D
-      </footer>
     </div>
   );
 };

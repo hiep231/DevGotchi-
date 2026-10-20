@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300" fill="none">
+  <!-- Ground Shadow -->
+  <ellipse cx="150" cy="285" rx="64" ry="9" fill="#1B2A4A" opacity="0.16"/>
+  <!-- Rig Group -->
+  <g id="rig">
+    <!-- Tail -->
+    <path d="M198 222 C242 226 272 248 278 280 C252 272 226 278 196 276Z" fill="#7ED9A6" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Body -->
+    <ellipse cx="150" cy="236" rx="56" ry="52" fill="#7ED9A6" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="150" cy="248" rx="32" ry="36" fill="#FFF1D6"/>
+
+    <!-- Arms -->
+    <ellipse cx="97" cy="242" rx="10" ry="18" transform="rotate(16 97 242)" fill="#7ED9A6" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="203" cy="242" rx="10" ry="18" transform="rotate(-16 203 242)" fill="#7ED9A6" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Feet -->
+    <ellipse cx="122" cy="282" rx="21" ry="12" fill="#7ED9A6" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="178" cy="282" rx="21" ry="12" fill="#7ED9A6" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Head Group -->
+    <g id="head">
+      <!-- Back Plates / Spines -->
+      <path transform="translate(92 88) rotate(-38)" d="M-16 6 Q0 -34 16 6Z" fill="#FFD79A" stroke="#1B2A4A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path transform="translate(208 88) rotate(38)" d="M-16 6 Q0 -34 16 6Z" fill="#FFD79A" stroke="#1B2A4A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path transform="translate(72 116) rotate(-62)" d="M-16 6 Q0 -34 16 6Z" fill="#FFD79A" stroke="#1B2A4A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path transform="translate(228 116) rotate(62)" d="M-16 6 Q0 -34 16 6Z" fill="#FFD79A" stroke="#1B2A4A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Head Base -->
+      <ellipse cx="150" cy="134" rx="78" ry="64" fill="#7ED9A6" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <ellipse cx="100" cy="112" rx="15" ry="5.3" transform="rotate(-35 100 112)" fill="#fff" opacity="0.85"/>
+      <circle cx="86" cy="126" r="3.5" fill="#fff" opacity="0.85"/>
+
+      <!-- Backwards Baseball Cap -->
+      <path d="M94 96 C92 50 208 50 206 96Z" fill="#4CC9F0" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M188 92 C214 88 238 96 242 106 C222 110 198 106 186 100Z" fill="#2AA8D8" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="150" y="84" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="17" fill="#fff">{ }</text>
+
+      <!-- Face -->
+      <ellipse cx="94" cy="162" rx="11" ry="6" fill="#FF8FA3" opacity="0.6"/>
+      <ellipse cx="206" cy="162" rx="11" ry="6" fill="#FF8FA3" opacity="0.6"/>
+      <circle cx="142" cy="158" r="2.4" fill="#1B2A4A" opacity="0.7"/>
+      <circle cx="158" cy="158" r="2.4" fill="#1B2A4A" opacity="0.7"/>
+
+      <!-- Eyes -->
+      <ellipse cx="118" cy="142" rx="11" ry="14" fill="#1B2A4A"/>
+      <circle cx="114.5" cy="136" r="4.6" fill="#fff"/>
+      <circle cx="121.5" cy="147" r="2.3" fill="#fff"/>
+      <ellipse cx="182" cy="142" rx="11" ry="14" fill="#1B2A4A"/>
+      <circle cx="178.5" cy="136" r="4.6" fill="#fff"/>
+      <circle cx="185.5" cy="147" r="2.3" fill="#fff"/>
+
+      <!-- Mouth -->
+      <path d="M138 172 Q144 180 150 172 Q156 180 162 172" fill="none" stroke="#1B2A4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>

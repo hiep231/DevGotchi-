@@ -35,8 +35,10 @@ Welcome to the **DevGotchi** codebase! All agents, developers, and tools working
 ## 💻 3. Frontend Engineering Standards (`frontend/`)
 
 * **Framework:** React 19 + TypeScript (Strict Mode).
-* **Styling:** Tailwind CSS v4.
+* **Styling & Typography:** Tailwind CSS v4.
   * Follow the **Gamified Soft UI** design token standard (tactile 3D press buttons, pillowy surfaces, candy gradients).
+  * **Typography Standard:** Always use `'Nunito'` and `'Be Vietnam Pro'` font family with complete Vietnamese Latin subset (`subset=vietnamese`). Do NOT use fonts lacking Vietnamese diacritics (like standard Fredoka) which cause broken glyph fallback.
+  * Follow art-direction guidelines from `design-taste-frontend` skill (`.agents/skills/design-taste-frontend`) to avoid generic AI styling and guarantee premium visual craft.
   * Do NOT use raw inline styles except for dynamic 3D hex color tints.
 * **Data Fetching & Server State:** TanStack Query (`@tanstack/react-query`).
   * Use TanStack Query for all asynchronous server state, API queries, mutations, and cache invalidation.

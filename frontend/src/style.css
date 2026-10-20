@@ -1,86 +1,361 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Baloo 2', 'Nunito', cursive, sans-serif;
+  --font-fun: 'Baloo 2', 'Nunito', cursive, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+  /* Warm Cream & Playful Canvas */
+  --bg: #FFF6E5;
+  --bg-sky: #DFF4FF;
+  --surface: #FFFFFF;
+  --surface-tint: #FFFBF3;
+  --ink: #2D2A4A;
+  --ink-soft: #6B6890;
+  --line: #E8DCC4;
+  --line-strong: #D6C8AA;
+
+  /* Accent Color Triads (base / deep / tint 15%) */
+  --primary: #FFB703;
+  --primary-deep: #E09A00;
+  --primary-tint: #FFF4D6;
+
+  --coral: #FF6B6B;
+  --coral-deep: #D94141;
+  --coral-tint: #FFEBEB;
+
+  --mint: #2EC4B6;
+  --mint-deep: #1FA396;
+  --mint-tint: #E8F9F7;
+
+  --sky: #4CC9F0;
+  --sky-deep: #28A5CC;
+  --sky-tint: #EAF8FD;
+
+  --grape: #8E7CFF;
+  --grape-deep: #6F5BD6;
+  --grape-tint: #F1EFFF;
+
+  /* Geometric Curves */
+  --radius-card: 24px;
+  --radius-chip: 999px;
+  --radius-btn: 16px;
+  --radius-icon: 14px;
+}
+
+/* Optional Dark Mode Fallback Tokens */
+[data-theme="dark"], .dark {
+  --bg: #1E1B33;
+  --bg-sky: #262242;
+  --surface: #2A2745;
+  --surface-tint: #23203C;
+  --ink: #FFFFFF;
+  --ink-soft: #A3A0C2;
+  --line: #3D395E;
+  --line-strong: #4F4B75;
+
+  --primary: #FFB703;
+  --primary-deep: #E09A00;
+  --primary-tint: #383019;
+
+  --coral: #FF6B6B;
+  --coral-deep: #D94141;
+  --coral-tint: #3B2026;
+
+  --mint: #2EC4B6;
+  --mint-deep: #1FA396;
+  --mint-tint: #1C3534;
+
+  --sky: #4CC9F0;
+  --sky-deep: #28A5CC;
+  --sky-tint: #1B3542;
+
+  --grape: #8E7CFF;
+  --grape-deep: #6F5BD6;
+  --grape-tint: #2D274D;
+}
+
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500 selection:text-white min-h-screen overflow-x-hidden;
-    font-family: 'Fredoka', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
     overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 /* ==========================================================================
-   🎮 PLAYFUL UI & GAMIFIED SOFT UI DESIGN TOKENS
+   🎨 PLAYFUL STICKER UI & GAMIFIED SOFT UI COMPONENT UTILITIES
    ========================================================================== */
 
-/* 1. Tactile 3D Buttons (Push & Pop physical depth) */
-.btn-3d-cyan {
-  @apply bg-gradient-to-b from-cyan-400 to-sky-500 text-slate-950 font-black rounded-2xl
-         border-b-4 border-sky-700 active:border-b-0 active:translate-y-1
-         shadow-lg shadow-cyan-500/25 active:shadow-none
-         transition-all cursor-pointer flex items-center justify-center gap-2;
+/* 1. Chunky Physical Depth Buttons */
+.btn-chunky {
+  position: relative;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-btn);
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
 }
 
-.btn-3d-amber {
-  @apply bg-gradient-to-b from-amber-300 to-amber-500 text-slate-950 font-black rounded-2xl
-         border-b-4 border-amber-700 active:border-b-0 active:translate-y-1
-         shadow-lg shadow-amber-500/25 active:shadow-none
-         transition-all cursor-pointer flex items-center justify-center gap-2;
+.btn-chunky:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--ink);
 }
 
-.btn-3d-emerald {
-  @apply bg-gradient-to-b from-emerald-400 to-teal-500 text-slate-950 font-black rounded-2xl
-         border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1
-         shadow-lg shadow-emerald-500/25 active:shadow-none
-         transition-all cursor-pointer flex items-center justify-center gap-2;
+.btn-chunky:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: 0 2px 0 var(--line-strong);
+  border-color: var(--line-strong);
 }
 
-.btn-3d-rose {
-  @apply bg-gradient-to-b from-rose-400 to-pink-500 text-slate-950 font-black rounded-2xl
-         border-b-4 border-rose-700 active:border-b-0 active:translate-y-1
-         shadow-lg shadow-rose-500/25 active:shadow-none
-         transition-all cursor-pointer flex items-center justify-center gap-2;
+.btn-chunky-primary {
+  background-color: var(--primary);
+  color: var(--ink);
 }
 
-.btn-3d-slate {
-  @apply bg-gradient-to-b from-slate-800 to-slate-900 text-slate-200 font-bold rounded-2xl
-         border-b-4 border-slate-950 active:border-b-0 active:translate-y-1
-         shadow-md shadow-black/40 active:shadow-none
-         transition-all cursor-pointer flex items-center justify-center gap-2;
+.btn-chunky-secondary {
+  background-color: var(--surface);
+  color: var(--ink);
 }
 
-/* 2. Soft Pillowy Clay Cards (Claymorphism) */
-.soft-card {
-  @apply bg-slate-900/90 border border-slate-800/80 rounded-3xl
-         shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]
-         backdrop-blur-xl;
+.btn-chunky-mint {
+  background-color: var(--mint);
+  color: #FFFFFF;
 }
 
-.soft-pill {
-  @apply rounded-2xl border border-slate-700/60 bg-slate-800/70 backdrop-blur-md shadow-sm;
+.btn-chunky-coral {
+  background-color: var(--coral);
+  color: #FFFFFF;
 }
 
-/* 3. Micro-animations */
-@keyframes float {
+.btn-chunky-sky {
+  background-color: var(--sky);
+  color: #FFFFFF;
+}
+
+.btn-chunky-ghost {
+  background-color: transparent;
+  border: 1.5px solid var(--line);
+  box-shadow: none;
+  color: var(--ink-soft);
+}
+.btn-chunky-ghost:active:not(:disabled) {
+  transform: translateY(1px);
+  background-color: var(--surface);
+  box-shadow: none;
+}
+
+/* 2. Sticker Cards */
+.card-sticker {
+  background-color: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 0 var(--ink);
+}
+
+.card-elevated {
+  background-color: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 0 var(--ink), 0 12px 24px -8px rgba(45, 42, 74, 0.15);
+}
+
+.card-flat {
+  background-color: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+/* 3. Sticker Chips & Badges */
+.chip-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-chip);
+  border: 2px solid var(--ink);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+.chip-flat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-chip);
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.badge-sticker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+}
+
+/* 4. EXP Bar Glassy Sheen */
+.exp-bar-container {
+  height: 16px;
+  background-color: var(--line);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.exp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFD166 0%, #FFB703 100%);
+  border-radius: 999px;
+  position: relative;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.exp-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  right: 2px;
+  height: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 999px;
+}
+
+/* 5. Animations & Keyframes */
+@keyframes floatGentle {
   0%, 100% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-6px) rotate(1deg);
+    transform: translateY(-6px);
   }
 }
 
-@keyframes jiggle {
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(0.95, 1.05) rotate(-2deg); }
-  50% { transform: scale(1.05, 0.95) rotate(2deg); }
-  75% { transform: scale(0.98, 1.02); }
+@keyframes cloudDriftLeft {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-14px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
-.animate-float {
-  animation: float 3.5s ease-in-out infinite;
+@keyframes cloudDriftRight {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(14px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
-.animate-jiggle {
-  animation: jiggle 0.4s ease-in-out;
+@keyframes popIn {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideDown {
+  0% {
+    transform: translate(-50%, -100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.animate-float-gentle {
+  animation: floatGentle 3s ease-in-out infinite;
+}
+
+.animate-cloud-left {
+  animation: cloudDriftLeft 14s ease-in-out infinite;
+}
+
+.animate-cloud-right {
+  animation: cloudDriftRight 18s ease-in-out infinite;
+}
+
+.animate-pop-in {
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-toast {
+  animation: toastSlideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes floatReaction {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6) translateY(0);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.15) translateY(-8px);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(1) translateY(-18px);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.85) translateY(-54px);
+    opacity: 0;
+  }
+}
+
+.animate-float-reaction {
+  animation: floatReaction 1s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+/* Telegram Mini App Touch Ergonomics */
+button, [role="button"], .cursor-pointer {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
 }

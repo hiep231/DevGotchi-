@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Puffy RAM – mascot vẽ bằng code</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF6E5;--sky:#DFF4FF;--ink:#2D2A4A;--soft:#6B6890;--surface:#fff;--primary:#FFB703;--grape:#8E7CFF;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1E1B33;--sky:#2F3A66;--ink:#F4EEFF;--soft:#B3AED6;--surface:#2A2745;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1E1B33;--sky:#2F3A66;--ink:#F4EEFF;--soft:#B3AED6;--surface:#2A2745;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:Nunito,ui-rounded,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px 16px 28px}
+h1{font:600 28px/1.1 Fredoka,ui-rounded,system-ui,sans-serif;margin:0}
+.sub{margin:4px 0 0;color:var(--soft);font-size:14px;line-height:1.4;max-width:420px}
+header{width:100%;max-width:420px}
+.stage{position:relative;width:100%;max-width:420px;border:2px solid var(--ink);border-radius:24px;background:linear-gradient(180deg,var(--sky),var(--bg));box-shadow:0 4px 0 var(--ink);overflow:hidden;touch-action:manipulation}
+svg{display:block;width:100%;height:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cloud{animation:drift 14s ease-in-out infinite alternate}
+#c2{animation-duration:19s;animation-direction:alternate-reverse}
+@keyframes drift{to{transform:translateX(22px)}}
+.bubble{position:absolute;top:12%;right:7%;background:var(--surface);color:var(--ink);border:2px solid var(--ink);border-radius:16px 16px 16px 4px;padding:6px 12px;font:600 15px Fredoka,ui-rounded,system-ui,sans-serif;opacity:0;transform:translateY(6px) scale(.92);transition:opacity .18s,transform .18s;pointer-events:none}
+.bubble.on{opacity:1;transform:none}
+.moods{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:420px}
+.chip{font:600 15px Fredoka,ui-rounded,system-ui,sans-serif;min-height:44px;padding:8px 16px;border:2px solid var(--ink);border-radius:999px;background:var(--surface);color:var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer;transition:transform .08s,box-shadow .08s}
+.chip[aria-pressed="true"]{background:var(--primary);color:#2D2A4A}
+.chip:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.chip:focus-visible{outline:3px solid var(--grape);outline-offset:2px}
+.hint{margin:0;max-width:420px;text-align:center;color:var(--soft);font-size:14px;line-height:1.4}
+@media (prefers-reduced-motion:reduce){.cloud{animation:none}.bubble{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Puffy RAM</h1>
+  <p class="sub">Cá nóc đeo kính, bụng gắn thanh RAM. Vẽ hoàn toàn bằng SVG và code, không dùng ảnh.</p>
+</header>
+
+<div class="stage">
+<svg id="svg" viewBox="0 0 300 330" role="img" aria-label="Puffy RAM, chú cá nóc xanh ngọc đeo kính, mắt nhìn theo con trỏ">
+  <g class="cloud" id="c1" opacity=".92"><ellipse cx="62" cy="54" rx="28" ry="11" fill="#fff"/><ellipse cx="82" cy="47" rx="17" ry="10" fill="#fff"/></g>
+  <g class="cloud" id="c2" opacity=".92"><ellipse cx="236" cy="96" rx="24" ry="9" fill="#fff"/><ellipse cx="220" cy="90" rx="14" ry="8" fill="#fff"/></g>
+  <ellipse cx="150" cy="298" rx="128" ry="26" fill="#7DD06F" stroke="#1B2A4A" stroke-width="4"/>
+  <ellipse cx="150" cy="292" rx="112" ry="17" fill="#A2E58F"/>
+  <ellipse id="shadow" cx="150" cy="291" rx="62" ry="8" fill="#4E9A45" opacity=".55"/>
+
+  <g id="rig">
+    <g id="tail"><path d="M204 238 C236 204 274 196 290 212 C282 230 284 246 292 264 C262 274 226 264 204 250 Z" fill="#1F8F8C" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M214 244 C240 232 262 226 280 224 M216 250 C242 250 262 254 280 256" fill="none" stroke="#1B2A4A" stroke-width="3" stroke-linecap="round"/></g>
+    <g id="bodyg"><path d="M88 206 L96 188 L104 206 Z" transform="rotate(-40 96 206)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M196 206 L204 188 L212 206 Z" transform="rotate(40 204 206)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M80 240 L88 222 L96 240 Z" transform="rotate(-70 88 240)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M204 240 L212 222 L220 240 Z" transform="rotate(70 212 240)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    <ellipse cx="150" cy="232" rx="62" ry="54" fill="#2BA6A0" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+    <ellipse cx="150" cy="250" rx="44" ry="30" fill="#7ED9CF"/>
+    <rect x="116" y="238" width="68" height="28" rx="4" fill="#4FB86B" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    <rect x="124" y="243" width="14" height="13" rx="2" fill="#2E8B4A"/><rect x="146" y="243" width="14" height="13" rx="2" fill="#2E8B4A"/><rect x="168" y="243" width="14" height="13" rx="2" fill="#2E8B4A"/><rect x="121" y="262" width="4" height="6" rx="1" fill="#FFD166" stroke="#1B2A4A" stroke-width="1.5"/><rect x="129.5" y="262" width="4" height="6" rx="1" fill="#FFD166" stroke="#1B2A4A" stroke-width="1.5"/><rect x="138" y="262" width="4" height="6" rx="1" fill="#FFD166" stroke="#1B2A4A" stroke-width="1.5"/><rect x="146.5" y="262" width="4" height="6" rx="1" fill="#FFD166" stroke="#1B2A4A" stroke-width="1.5"/><rect x="155" y="262" width="4" height="6" rx="1" fill="#FFD166" stroke="#1B2A4A" stroke-width="1.5"/><rect x="163.5" y="262" width="4" height="6" rx="1" fill="#FFD166" stroke="#1B2A4A" stroke-width="1.5"/><rect x="172" y="262" width="4" height="6" rx="1" fill="#FFD166" stroke="#1B2A4A" stroke-width="1.5"/></g>
+    <ellipse cx="124" cy="282" rx="21" ry="12" fill="#2BA6A0" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="176" cy="282" rx="21" ry="12" fill="#2BA6A0" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+    <g id="headg">
+      <g id="earL"><ellipse cx="66" cy="150" rx="16" ry="23" transform="rotate(-12 66 150)" fill="#2BA6A0" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g>
+      <g id="earR"><ellipse cx="234" cy="150" rx="16" ry="23" transform="rotate(12 234 150)" fill="#2BA6A0" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g>
+      <path d="M102 70 L110 52 L118 70 Z" transform="rotate(-25 110 70)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M142 64 L150 46 L158 64 Z" transform="rotate(0 150 64)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M182 70 L190 52 L198 70 Z" transform="rotate(25 190 70)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M72 92 L80 74 L88 92 Z" transform="rotate(-50 80 92)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M212 92 L220 74 L228 92 Z" transform="rotate(50 220 92)" fill="#FF9F43" stroke="#1B2A4A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+      <ellipse cx="150" cy="128" rx="80" ry="66" fill="#2BA6A0" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+      <ellipse cx="98" cy="110" rx="14" ry="5" transform="rotate(-35 98 110)" fill="#fff" opacity=".85"/><circle cx="84" cy="124" r="3.5" fill="#fff" opacity=".85"/>
+      <ellipse cx="150" cy="164" rx="28" ry="17" fill="#7ED9CF"/>
+      
+      <g id="face">
+        <ellipse cx="96" cy="156" rx="11" ry="6" fill="#FF8FA3" opacity=".6"/><ellipse cx="204" cy="156" rx="11" ry="6" fill="#FF8FA3" opacity=".6"/>
+        
+        <g id="eyes"></g>
+        <g id="mouth"></g>
+        <g id="extra"></g>
+        <circle cx="118" cy="138" r="25" fill="#fff" opacity=".07" stroke="#1B2A4A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="182" cy="138" r="25" fill="#fff" opacity=".07" stroke="#1B2A4A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M142 135 Q150 129 158 135" fill="none" stroke="#1B2A4A" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </g>
+    </g>
+  </g>
+</svg>
+<div class="bubble" id="bubble" role="status"></div>
+</div>
+
+<div class="moods" role="group" aria-label="Biểu cảm">
+  <button class="chip" data-m="idle">Bình thường</button>
+  <button class="chip" data-m="happy">Vui</button>
+  <button class="chip" data-m="hungry">Đói</button>
+  <button class="chip" data-m="sleepy">Buồn ngủ</button>
+  <button class="chip" data-m="eating">Đang ăn</button>
+</div>
+<p class="hint">Di chuột hoặc chạm lên màn hình để bé nhìn theo. Chạm vào bé để chọc.</p>
+
+<script>
+const $ = s => document.querySelector(s), INK = '#1B2A4A';
+const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const el = {rig:$('#rig'),tail:$('#tail'),body:$('#bodyg'),head:$('#headg'),eL:$('#earL'),eR:$('#earR'),face:$('#face'),eyes:$('#eyes'),mouth:$('#mouth'),extra:$('#extra'),shadow:$('#shadow'),bub:$('#bubble'),svg:$('#svg')};
+const st = (w = 5) => `stroke="${INK}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+const both = f => [118, 182].map(f).join('');
+const dot = x => `<g class="eye" data-cx="${x}" data-cy="138"><ellipse cx="${x}" cy="138" rx="11" ry="14" fill="${INK}"/><circle class="hl" cx="${x-3.5}" cy="132" r="4.6" fill="#fff"/><circle class="hl" cx="${x+3.5}" cy="143" r="2.3" fill="#fff"/></g>`;
+const arc = d => x => `<g class="eye" data-cx="${x}" data-cy="138"><path d="M${x-12} ${138+d} Q${x} ${138-d*1.6} ${x+12} ${138+d}" fill="none" ${st(5.5)}/></g>`;
+const star = x => `<g class="eye" data-cx="${x}" data-cy="138"><path transform="translate(${x} 138)" d="M0-15L4-4 15 0 4 4 0 15-4 4-15 0-4-4Z" fill="#FFD166" ${st(2.5)}/></g>`;
+const RED = '#E8505B';
+const MOODS = {
+  idle:   {e:both(dot), m:`<path d="M138 166 Q144 174 150 166 Q156 174 162 166" fill="none" ${st(3)}/>`, x:'', say:'Blub~'},
+  happy:  {e:both(arc(7)), m:`<path d="M139 165 Q150 184 161 165Z" fill="${RED}" ${st(3)}/>`, x:'', say:'Hihi!'},
+  hungry: {e:both(dot), m:`<ellipse cx="150" cy="170" rx="7" ry="6" fill="${RED}" ${st(3)}/>`,
+          x:`<path d="M103 120 L131 128 M197 120 L169 128" fill="none" ${st(5)}/><path d="M196 88 q6 2 6 8 M214 88 q-6 2 -6 8 M196 104 q6 -2 6 -8 M214 104 q-6 -2 -6 -8" fill="none" stroke="${RED}" stroke-width="3.5" stroke-linecap="round"/>`, say:'Đói quá!'},
+  sleepy: {e:both(arc(-5)), m:`<ellipse cx="150" cy="169" rx="4" ry="3.5" fill="none" ${st(3)}/>`,
+          x:`<text x="206" y="94" font-family="Fredoka,sans-serif" font-weight="600" font-size="24" fill="#6B6890">Z</text><text x="228" y="72" font-family="Fredoka,sans-serif" font-weight="600" font-size="16" fill="#6B6890">z</text>`, say:'Zzz…'},
+  eating: {e:both(star), m:`<path d="M136 164 Q150 190 164 164Z" fill="${RED}" ${st(3)}/>`, x:'', say:'Ngon ghê!'}
+};
+const TAPS = ["Phồng má!","Hihi!","Blub~","Cho ăn đi!"];
+
+let gx = 0, gy = 0, tx = 0, ty = 0, lastPtr = -1e9, nextGlance = 0, sq = -1e9, twitch = 0, nextBlink = 2500, blinkAt = -1e9, mood = 'idle', raf, bubT;
+const clamp = v => Math.max(-1, Math.min(1, v));
+function aim(x, y) {
+  const r = el.svg.getBoundingClientRect();
+  tx = clamp((x - (r.left + r.width / 2)) / (r.width * .6));
+  ty = clamp((y - (r.top + r.height * .4)) / (r.height * .6));
+  lastPtr = performance.now();
+}
+addEventListener('pointermove', e => aim(e.clientX, e.clientY), {passive:true});
+addEventListener('pointerdown', e => aim(e.clientX, e.clientY), {passive:true});
+
+function say(t) {
+  el.bub.textContent = t; el.bub.classList.add('on');
+  clearTimeout(bubT); bubT = setTimeout(() => el.bub.classList.remove('on'), 1600);
+}
+function setMood(m) {
+  mood = m; const d = MOODS[m];
+  el.eyes.innerHTML = d.e; el.mouth.innerHTML = d.m; el.extra.innerHTML = d.x;
+  document.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m));
+  say(d.say);
+  if (m === 'eating' || m === 'happy') { sq = performance.now(); twitch = 1; }
+}
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => setMood(b.dataset.m)));
+el.svg.addEventListener('click', () => {
+  sq = performance.now(); twitch = 1;
+  try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch (e) {}
+  say(TAPS[Math.floor(Math.random() * TAPS.length)]);
+});
+
+function frame(t) {
+  const s = t / 1000, k = rm ? 0 : 1;
+  if (t - lastPtr > 3000 && t > nextGlance) {
+    tx = (Math.random() * 2 - 1) * .9; ty = (Math.random() * 2 - 1) * .5;
+    nextGlance = t + 1800 + Math.random() * 2200;
+  }
+  gx += (tx - gx) * .15; gy += (ty - gy) * .15;
+  const br = 1 + .022 * Math.sin(s * 2.1) * k, fy = Math.sin(s * 1.5) * 3 * k;
+  const e = (t - sq) / 380, on = e >= 0 && e < 1;
+  const q = on ? Math.sin(e * Math.PI * 2) * (1 - e) : 0, jump = on ? 12 * Math.sin(e * Math.PI) : 0;
+  el.rig.setAttribute('transform', `translate(0 ${fy - jump}) translate(150 286) scale(${1 + .07 * q} ${1 - .1 * q}) translate(-150 -286)`);
+  el.body.setAttribute('transform', `translate(150 286) scale(1 ${br}) translate(-150 -286)`);
+  el.head.setAttribute('transform', `translate(${gx * 2} ${-(br - 1) * 70 + gy * 1.5}) rotate(${gx * 3.5} 150 190)`);
+  el.face.setAttribute('transform', `translate(${gx * 3.5} ${gy * 2.5})`);
+  el.eyes.setAttribute('transform', `translate(${gx * 3} ${gy * 2})`);
+  el.tail.setAttribute('transform', `rotate(${Math.sin(s * 2.4) * 9 * k + (mood === 'hungry' ? -8 : 0)} 206 244)`);
+  twitch *= .93;
+  const ta = Math.sin(t / 35) * 9 * twitch;
+  el.eL.setAttribute('transform', `rotate(${ta} 80 150)`);
+  el.eR.setAttribute('transform', `rotate(${-ta} 220 150)`);
+  el.shadow.setAttribute('rx', 62 * (1 + (fy - jump) / 80));
+  if (t > nextBlink && !rm) { blinkAt = t; nextBlink = t + 3000 + Math.random() * 3000; }
+  const b = (t - blinkAt) / 140, sc = b >= 0 && b < 1 ? 1 - .9 * Math.sin(b * Math.PI) : 1;
+  el.eyes.querySelectorAll('.eye').forEach(g => {
+    const x = g.dataset.cx, y = g.dataset.cy;
+    g.setAttribute('transform', `translate(${x} ${y}) scale(1 ${sc}) translate(${-x} ${-y})`);
+  });
+  el.eyes.querySelectorAll('.hl').forEach(h => h.setAttribute('transform', `translate(${-gx * .9} ${-gy * .9})`));
+  raf = requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) cancelAnimationFrame(raf); else raf = requestAnimationFrame(frame);
+});
+setMood('idle');
+raf = requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -11,7 +11,19 @@ export const petApi = {
       const res = await fetch('/api/pets/me');
       if (res.ok) {
         const json = await res.json();
-        return json.data || json;
+        const p = json.data;
+        if (p) {
+          return {
+            ...p,
+            customName: p.customName || p.name || 'Pet',
+            streak: p.streak ?? 1,
+            energy: p.energy ?? 85,
+            isSleeping: p.isSleeping ?? false,
+            totalFocusMinutes: p.totalFocusMinutes ?? 0,
+            lastFedAt: p.lastFedAt ? new Date(p.lastFedAt).toISOString() : new Date().toISOString(),
+          };
+        }
+        return null;
       }
     } catch {
       // Offline fallback
@@ -34,7 +46,16 @@ export const petApi = {
     }
 
     const saved = localStorage.getItem(FOOD_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_FOODS;
+    if (!saved) return INITIAL_FOODS;
+    try {
+      const parsed: FoodItem[] = JSON.parse(saved);
+      return INITIAL_FOODS.map((initFood) => {
+        const existing = parsed.find((p) => p.id === initFood.id);
+        return existing ? { ...initFood, count: existing.count } : initFood;
+      });
+    } catch {
+      return INITIAL_FOODS;
+    }
   },
 
   // Adopt Starter Pet
@@ -89,7 +110,7 @@ export const petApi = {
     const hungerGain = isFav ? food.hungerRestored + 15 : food.hungerRestored;
     const happyGain = isFav ? food.happinessBonus + 15 : food.happinessBonus;
 
-    const updatedPet: PetState = {
+    let updatedPet: PetState = {
       ...currentPet,
       hunger: Math.min(100, currentPet.hunger + hungerGain),
       happiness: Math.min(100, currentPet.happiness + happyGain),
@@ -101,11 +122,22 @@ export const petApi = {
     localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
 
     try {
-      await fetch('/api/pets/feed', {
+      const res = await fetch('/api/pets/feed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ foodId }),
       });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          updatedPet = {
+            ...updatedPet,
+            ...json.data,
+            customName: json.data.customName || updatedPet.customName,
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+        }
+      }
     } catch {
       // Offline fallback
     }

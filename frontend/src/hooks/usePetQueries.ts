@@ -39,7 +39,7 @@ export const useAdoptPetMutation = () => {
 
 export const useFeedPetMutation = () => {
   const queryClient = useQueryClient();
-  const { feedPet: feedPetStore } = usePetStore();
+  const { applyFeeding } = usePetStore();
 
   return useMutation({
     mutationFn: async ({
@@ -53,11 +53,13 @@ export const useFeedPetMutation = () => {
     }) => {
       return petApi.feedPet(foodId, pet, foods);
     },
-    onSuccess: ({ pet, foods }, variables) => {
-      queryClient.setQueryData(PET_QUERY_KEY, pet);
-      queryClient.setQueryData(FOODS_QUERY_KEY, foods);
-      // Trigger 3D visual feeding reaction in UI
-      feedPetStore(variables.foodId);
+    onSuccess: ({ pet: newPet, foods: newFoods }, variables) => {
+      queryClient.setQueryData(PET_QUERY_KEY, newPet);
+      queryClient.setQueryData(FOODS_QUERY_KEY, newFoods);
+      const foodItem = variables.foods.find((f) => f.id === variables.foodId);
+      if (foodItem) {
+        applyFeeding(foodItem, newPet, newFoods);
+      }
     },
   });
 };

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128" fill="none">
+  <ellipse cx="32" cy="58" rx="22" ry="3.5" fill="#1B2A4A" opacity="0.15" />
+  <g transform="rotate(5 32 32)">
+    <!-- Antennae -->
+    <path d="M26 18C20 14 12 15 8 18M30 16C28 10 22 8 16 9" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Shrimp Body -->
+    <path d="M24 22C32 17 46 18 52 25C57 31 58 40 52 46C47 51 40 50 36 44C32 38 27 34 20 33C14 32 10 27 12 22C14 17 19 17 24 22Z" fill="#FF8585" stroke="#1B2A4A" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Belly Underlay -->
+    <path d="M22 29C28 29 36 34 39 42C35 44 30 42 27 38C24 34 20 32 18 31" fill="#FFE5E5"/>
+    <!-- Segments Lines -->
+    <path d="M34 20C38 25 39 31 38 35M43 23C47 28 47 34 45 38M49 28C52 33 51 38 48 42" stroke="#D94141" stroke-width="2" stroke-linecap="round"/>
+    <!-- Tail Fan -->
+    <path d="M14 20L6 18C5 22 8 26 12 27M13 22L7 24C8 27 12 29 15 28" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="#FF6B6B"/>
+    <!-- Pill Highlight -->
+    <rect x="36" y="22" width="10" height="3.5" rx="1.75" fill="#FFFFFF" opacity="0.85" transform="rotate(15 36 22)"/>
+    <circle cx="49" cy="24" r="1.2" fill="#FFFFFF" opacity="0.85"/>
+    <!-- Cute Big Eye -->
+    <circle cx="45" cy="28" r="4.2" fill="#1B2A4A" />
+    <circle cx="46.5" cy="26.5" r="1.4" fill="#FFFFFF" />
+    <circle cx="44" cy="29.5" r="0.8" fill="#FFFFFF" />
+    <!-- Rosy Cheek -->
+    <ellipse cx="49" cy="35" rx="2.5" ry="1.5" fill="#FF5252" opacity="0.7" />
+    <!-- Tiny Smile -->
+    <path d="M43 33C45 35 47 34 48 33" stroke="#1B2A4A" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>

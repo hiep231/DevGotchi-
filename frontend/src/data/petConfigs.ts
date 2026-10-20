@@ -2,53 +2,59 @@ import { FoodItem, PetConfig } from '../types/pet';
 
 export const STARTER_PETS: PetConfig[] = [
   {
-    id: 'PUFFY',
-    name: 'Puffy',
-    species: 'Cá Nóc Biển (Pufferfish)',
-    archetype: 'The Bug Hunter',
-    tagline: 'Phồng to khi stress, xẹp xuống thở phào khi fix xong bug!',
-    description: 'Thân hình cầu tròn xoe màu xanh biển, gai vàng cao su mềm mại. Cực kỳ nhạy cảm với deadline nhưng siêu đáng yêu khi được cho ăn tôm.',
-    primaryColor: '#38bdf8',    // Cyan / Sky blue
-    secondaryColor: '#fef08a',  // Pastel yellow
-    accentColor: '#f43f5e',     // Coral pink lips
-    favoriteFood: 'Tôm Debug',
-    passivePerk: '+20% EXP khi hoàn thành phiên Pomodoro ngắn (15-25m)',
+    id: 'BYTEY',
+    name: 'Bytey',
+    species: 'Mèo Lofi Sáng Tạo (Lavender Cat)',
+    roleBadge: '🎨 UI/UX & Design',
+    targetRole: 'Dành cho Designer, UI/UX & Creative',
+    archetype: 'The Figma Wizard',
+    tagline: 'Đeo headphone nghe lofi, đuôi uốn dấu ngoặc nhọn { nắn từng pixel hoàn hảo!',
+    description: 'Mèo tím lavender hạt đậu với đôi tai nhọn viền hồng, đeo tai nghe headphone và đuôi xoăn hình dấu ngoặc nhọn { . Thần hộ mệnh cho dân sáng tạo và giao diện.',
+    primaryColor: '#a855f7',    // Lavender purple
+    secondaryColor: '#f472b6',  // Pink
+    accentColor: '#38bdf8',     // Cyan
+    favoriteFood: 'Bánh Cá RAM',
+    passivePerk: '+20% EXP cho các phiên Design, Wireframe, Prototype & UI Review',
     stats: {
       focusBonus: 85,
-      decayResistance: 70,
+      decayResistance: 80,
       initialHappiness: 90,
     },
   },
   {
-    id: 'BYTEY',
-    name: 'Bytey',
-    species: 'Mèo Cyber (Cyber Cat)',
-    archetype: 'The Frontend Ninja',
-    tagline: 'Gật gù theo nhạc lofi, đuôi cáp USB đổi màu theo tâm trạng.',
-    description: 'Mèo hạt đậu màu tím pastel với đôi tai nhọn và chiếc đuôi cáp USB cắm sạc. Rất thích giao diện đẹp và không chịu làm việc nếu thiếu nhạc.',
-    primaryColor: '#c084fc',    // Purple pastel
-    secondaryColor: '#f472b6',  // Pink
-    accentColor: '#38bdf8',     // Cyan
-    favoriteFood: 'Bánh Cá RAM',
-    passivePerk: 'Nhận gấp đôi điểm Thân thiện (Happiness) sau mỗi 3 ngày streak',
+    id: 'OCTY',
+    name: 'Octy',
+    species: 'Bạch Tuộc Soi Bug (Coral Octopus)',
+    roleBadge: '🔍 QA & Tester',
+    targetRole: 'Dành cho QA, Tester & Bug Hunter',
+    archetype: 'The Quality Guardian',
+    tagline: 'Cầm kính lúp rà soát từng edge case, 4 xúc tu tóm gọn mọi bug!',
+    description: 'Bạch tuộc hồng san hô mũm mĩm, 3 chấm bi kem trên đầu, 1 xúc tu cầm kính lúp soi bug siêu nét và ăng-ten radar bắt lỗi hệ thống.',
+    primaryColor: '#ff6b6b',    // Coral pink
+    secondaryColor: '#fda4af',  // Soft pink
+    accentColor: '#4cc9f0',     // Sky glass
+    favoriteFood: 'Donut Espresso',
+    passivePerk: '+25% EXP khi hoàn thành các phiên Test Case, Regression & Verify PR',
     stats: {
-      focusBonus: 80,
-      decayResistance: 80,
+      focusBonus: 92,
+      decayResistance: 85,
       initialHappiness: 85,
     },
   },
   {
     id: 'GOLEMY',
-    name: 'Golemy',
-    species: 'Khối Đá Server (Server Golem)',
-    archetype: 'The Backend Architect',
-    tagline: 'Lì lợm, trầm tĩnh và kiên định trước mọi lỗi 500 Internal Error.',
-    description: 'Khối lập phương bo tròn góc màu xanh rêu mát mắt, trên đỉnh đầu mọc một nhánh mầm cây nhỏ đung đưa. Đôi mắt LED đổi màu biểu cảm.',
-    primaryColor: '#34d399',    // Emerald
-    secondaryColor: '#64748b',  // Slate stone
-    accentColor: '#fbbf24',     // Amber LED
-    favoriteFood: 'Thạch Năng Lượng Docker',
-    passivePerk: '+25% EXP cho các phiên Deep Work dài (>45 phút)',
+    name: 'Dino',
+    species: 'Khủng Long DevOps (Mint Baby Dino)',
+    roleBadge: '💻 Software Engineer',
+    targetRole: 'Dành cho Developer, DevOps & Backend',
+    archetype: 'The Code Architect',
+    tagline: 'Đội mũ ngược dán sticker laptop, kiên định trước mọi lỗi 500 server!',
+    description: 'Chú khủng long con màu xanh bạc hà mũm mĩm, 3 vảy gai kem mềm mại và chiếc mũ lưỡi trai đội ngược siêu ngầu. Thần hộ mệnh cho coder gõ phím thâu đêm.',
+    primaryColor: '#2ec4b6',    // Mint
+    secondaryColor: '#fef08a',  // Cream
+    accentColor: '#ffb703',     // Amber cap
+    favoriteFood: 'Thạch Docker',
+    passivePerk: '+25% EXP cho các phiên Deep Work Coding & Refactor dài (>45m)',
     stats: {
       focusBonus: 95,
       decayResistance: 90,
@@ -56,21 +62,23 @@ export const STARTER_PETS: PetConfig[] = [
     },
   },
   {
-    id: 'OCTY',
-    name: 'Octy',
-    species: 'Bạch Tuộc Git (Git Kraken)',
-    archetype: 'The Fullstack Multitasker',
-    tagline: 'Nhiều xúc tu gõ nhiều bàn phím cùng lúc, thích uống espresso.',
-    description: 'Bạch tuộc tròn ủng màu hồng dâu, xúc tu uốn lượn mềm mại. Thích học nhiều ngôn ngữ lập trình nhưng rất dễ bị quá tải nếu ôm đồm.',
-    primaryColor: '#fb7185',    // Rose
-    secondaryColor: '#fda4af',  // Soft pink
-    accentColor: '#67e8f9',     // Cyan
-    favoriteFood: 'Donut Cà Phê',
-    passivePerk: 'Tốc độ hồi năng lượng Energy tăng 15% sau mỗi giờ nghỉ giải lao',
+    id: 'PUFFY',
+    name: 'Puffy',
+    species: 'Cá Nóc Trí Thức (Teal Pufferfish)',
+    roleBadge: '📋 Product & Data',
+    targetRole: 'Dành cho Product Manager, BA & Data',
+    archetype: 'The Product Strategist',
+    tagline: 'Đeo kính tri thức, bụng gắn RAM mạ vàng lưu trữ mọi requirement & user metric!',
+    description: 'Thân tròn xoe màu xanh ngọc teal-cyan, gai cam mềm mại và vây đuôi xòe hình quạt. Đeo kính tròn tri thức cực ngầu, quản lý roadmap không lo lệch tiến độ.',
+    primaryColor: '#0d9488',    // Teal-cyan
+    secondaryColor: '#fde047',  // Orange/yellow spikes
+    accentColor: '#f43f5e',     // Coral pink lips
+    favoriteFood: 'Tôm Debug',
+    passivePerk: '+20% EXP cho các phiên Sprint Planning, PRD & Data Analytics',
     stats: {
       focusBonus: 88,
       decayResistance: 75,
-      initialHappiness: 80,
+      initialHappiness: 90,
     },
   },
 ];
@@ -83,7 +91,7 @@ export const INITIAL_FOODS: FoodItem[] = [
     color: 'from-orange-400 to-rose-500',
     hungerRestored: 30,
     happinessBonus: 15,
-    description: 'Món ăn khoái khẩu của Puffy, vừa béo vừa giòn giúp tiêu hóa hết bug!',
+    description: 'Khoái khẩu của Puffy, vừa béo vừa giòn giúp tiêu hóa hết bug!',
     count: 5,
   },
   {
@@ -93,7 +101,7 @@ export const INITIAL_FOODS: FoodItem[] = [
     color: 'from-blue-400 to-cyan-500',
     hungerRestored: 25,
     happinessBonus: 20,
-    description: 'Giòn rụm đậm vị silicon, nạp đầy bộ nhớ tức thì cho Bytey.',
+    description: 'Giòn rụm vị silicon, nạp đầy bộ nhớ tức thì cho Bytey.',
     count: 3,
   },
   {
@@ -103,7 +111,7 @@ export const INITIAL_FOODS: FoodItem[] = [
     color: 'from-emerald-400 to-teal-500',
     hungerRestored: 35,
     happinessBonus: 10,
-    description: 'Mát lạnh, đóng gói nguyên vẹn dinh dưỡng cho Golemy.',
+    description: 'Mát lạnh, đóng gói nguyên vẹn dinh dưỡng cho Dino.',
     count: 3,
   },
   {
@@ -113,7 +121,87 @@ export const INITIAL_FOODS: FoodItem[] = [
     color: 'from-amber-400 to-amber-700',
     hungerRestored: 20,
     happinessBonus: 25,
-    description: 'Nạp caffeine cực mạnh để kéo mood tỉnh táo làm việc.',
+    description: 'Nạp caffeine cực mạnh kéo mood tỉnh táo cho Octy.',
     count: 4,
+  },
+  {
+    id: 'bao',
+    name: 'Bánh Bao Bug',
+    icon: '🥟',
+    color: 'from-yellow-200 to-amber-400',
+    hungerRestored: 28,
+    happinessBonus: 12,
+    description: 'Bánh bao nóng hổi vỏ đốm bọ ladybug bốc hơi nghi ngút.',
+    count: 3,
+  },
+  {
+    id: 'noodle_cup',
+    name: 'Mì Ly Terminal',
+    icon: '🍜',
+    color: 'from-red-400 to-yellow-500',
+    hungerRestored: 32,
+    happinessBonus: 14,
+    description: 'Cốc mì cứu đói lúc nửa đêm, làn khói uốn thành ký tự >_.',
+    count: 4,
+  },
+  {
+    id: 'bubble_tea',
+    name: 'Trà Sữa Sét',
+    icon: '🧋',
+    color: 'from-purple-300 to-pink-400',
+    hungerRestored: 18,
+    happinessBonus: 22,
+    description: 'Trà sữa trân châu vuông in hình tia sét nạp năng lượng.',
+    count: 3,
+  },
+  {
+    id: 'onigiri',
+    name: 'Cơm Nắm Git',
+    icon: '🍙',
+    color: 'from-emerald-300 to-teal-500',
+    hungerRestored: 24,
+    happinessBonus: 16,
+    description: 'Cơm nắm dẻo quấn lá rong biển hình sơ đồ rẽ nhánh Git.',
+    count: 3,
+  },
+  {
+    id: 'ice_cream',
+    name: 'Kem Que Merge',
+    icon: '🍦',
+    color: 'from-pink-300 to-cyan-300',
+    hungerRestored: 15,
+    happinessBonus: 25,
+    description: 'Kem ốc quế hai vị bạc hà và dâu hòa quyện mũi tên merge.',
+    count: 2,
+  },
+  {
+    id: 'pizza',
+    name: 'Pizza Pass Test',
+    icon: '🍕',
+    color: 'from-amber-400 to-red-500',
+    hungerRestored: 35,
+    happinessBonus: 18,
+    description: 'Pizza phô mai béo ngậy xếp pepperoni thành dấu checkmark xanh.',
+    count: 2,
+  },
+  {
+    id: 'banh_mi',
+    name: 'Bánh Mì Kẹp Tầng',
+    icon: '🥖',
+    color: 'from-amber-300 to-orange-500',
+    hungerRestored: 40,
+    happinessBonus: 20,
+    description: 'Bánh mì Sài Gòn giòn rụm ngập tràn pate, đồ chua và dưa leo.',
+    count: 2,
+  },
+  {
+    id: 'golden_apple',
+    name: 'Táo Vàng Thần Kỳ',
+    icon: '🍏',
+    color: 'from-yellow-300 to-amber-500',
+    hungerRestored: 50,
+    happinessBonus: 50,
+    description: 'Táo vàng lấp lánh bug vẫy chào, hồi phục cực đại cả No và Vui!',
+    count: 1,
   },
 ];

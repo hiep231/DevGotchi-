@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128" fill="none">
+  <ellipse cx="32" cy="58" rx="22" ry="3.5" fill="#1B2A4A" opacity="0.15" />
+  <g transform="rotate(5 32 32)">
+    <!-- Docker Stack Containers on Top -->
+    <rect x="22" y="14" width="7" height="6" rx="1.5" fill="#38BDF8" stroke="#1B2A4A" stroke-width="2" />
+    <rect x="31" y="14" width="7" height="6" rx="1.5" fill="#38BDF8" stroke="#1B2A4A" stroke-width="2" />
+    <rect x="26.5" y="7" width="7" height="6" rx="1.5" fill="#0284C7" stroke="#1B2A4A" stroke-width="2" />
+
+    <!-- Jelly Body (Curved Wobble Cube) -->
+    <path
+      d="M15 26C15 22 19 20 25 20H39C45 20 49 22 49 26L52 46C52 51 46 54 32 54C18 54 12 51 12 46L15 26Z"
+      fill="#4CC9F0"
+      stroke="#1B2A4A"
+      stroke-width="2.5"
+      stroke-linejoin="round"
+    />
+    <!-- Glossy Jelly Highlight -->
+    <path
+      d="M19 26C20 23 23 22 28 22H36C41 22 44 23 45 26"
+      stroke="#FFFFFF"
+      stroke-width="2.5"
+      stroke-linecap="round"
+    />
+    <rect x="18" y="29" width="3" height="12" rx="1.5" fill="#FFFFFF" opacity="0.75"/>
+    <circle cx="19.5" cy="44" r="1.2" fill="#FFFFFF" opacity="0.75"/>
+    <!-- Cute Face -->
+    <circle cx="26" cy="36" r="3.5" fill="#1B2A4A" />
+    <circle cx="27" cy="35" r="1.2" fill="#FFFFFF" />
+    <circle cx="38" cy="36" r="3.5" fill="#1B2A4A" />
+    <circle cx="39" cy="35" r="1.2" fill="#FFFFFF" />
+    <!-- Cute Mouth -->
+    <path
+      d="M29 42C31 45 33 45 35 42"
+      stroke="#1B2A4A"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+    <!-- Blushing cheeks -->
+    <ellipse cx="22" cy="40" rx="2.5" ry="1.5" fill="#0284C7" opacity="0.5" />
+    <ellipse cx="42" cy="40" rx="2.5" ry="1.5" fill="#0284C7" opacity="0.5" />
+  </g>
+</svg>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300" fill="none">
+  <!-- Ground Shadow -->
+  <ellipse cx="150" cy="285" rx="64" ry="9" fill="#1B2A4A" opacity="0.16"/>
+  <!-- Rig Group -->
+  <g id="rig">
+    <!-- Tentacles -->
+    <path d="M112 222 C78 232 52 262 70 282 C84 294 106 284 98 270 C93 262 83 267 88 274" fill="none" stroke="#1B2A4A" stroke-width="26" stroke-linecap="round"/>
+    <path d="M112 222 C78 232 52 262 70 282 C84 294 106 284 98 270 C93 262 83 267 88 274" fill="none" stroke="#F5705F" stroke-width="16" stroke-linecap="round"/>
+
+    <path d="M188 222 C222 232 248 262 230 282 C216 294 194 284 202 270 C207 262 217 267 212 274" fill="none" stroke="#1B2A4A" stroke-width="26" stroke-linecap="round"/>
+    <path d="M188 222 C222 232 248 262 230 282 C216 294 194 284 202 270 C207 262 217 267 212 274" fill="none" stroke="#F5705F" stroke-width="16" stroke-linecap="round"/>
+
+    <path d="M134 226 C122 254 126 282 144 286 C152 288 156 280 150 276" fill="none" stroke="#1B2A4A" stroke-width="26" stroke-linecap="round"/>
+    <path d="M134 226 C122 254 126 282 144 286 C152 288 156 280 150 276" fill="none" stroke="#F5705F" stroke-width="16" stroke-linecap="round"/>
+
+    <path d="M166 226 C178 254 174 282 156 286 C148 288 144 280 150 276" fill="none" stroke="#1B2A4A" stroke-width="26" stroke-linecap="round"/>
+    <path d="M166 226 C178 254 174 282 156 286 C148 288 144 280 150 276" fill="none" stroke="#F5705F" stroke-width="16" stroke-linecap="round"/>
+
+    <!-- Magnifying Glass Arm -->
+    <circle cx="248" cy="132" r="15" fill="#CFEFFF" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M240 126 q3 -6 9 -7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M214 186 C242 190 252 170 247 150" fill="none" stroke="#1B2A4A" stroke-width="20" stroke-linecap="round"/>
+    <path d="M214 186 C242 190 252 170 247 150" fill="none" stroke="#F5705F" stroke-width="11" stroke-linecap="round"/>
+
+    <!-- Head Dome -->
+    <ellipse cx="150" cy="146" rx="78" ry="72" fill="#F5705F" stroke="#1B2A4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="150" cy="200" rx="26" ry="10" fill="#FFF1D6"/>
+
+    <!-- Bug Dots -->
+    <circle cx="118" cy="98" r="7" fill="#FFD2C2"/>
+    <circle cx="142" cy="88" r="5" fill="#FFD2C2"/>
+    <circle cx="178" cy="100" r="6" fill="#FFD2C2"/>
+
+    <!-- Highlight -->
+    <ellipse cx="104" cy="108" rx="16" ry="5.7" transform="rotate(-35 104 108)" fill="#fff" opacity="0.85"/>
+    <circle cx="90" cy="122" r="3.5" fill="#fff" opacity="0.85"/>
+
+    <!-- Face -->
+    <ellipse cx="92" cy="170" rx="11" ry="6" fill="#FFB3C1" opacity="0.6"/>
+    <ellipse cx="208" cy="170" rx="11" ry="6" fill="#FFB3C1" opacity="0.6"/>
+
+    <!-- Eyes -->
+    <ellipse cx="120" cy="148" rx="11.5" ry="14.7" fill="#1B2A4A"/>
+    <circle cx="116.5" cy="142" r="4.6" fill="#fff"/>
+    <circle cx="123.5" cy="153" r="2.3" fill="#fff"/>
+    <ellipse cx="180" cy="148" rx="11.5" ry="14.7" fill="#1B2A4A"/>
+    <circle cx="176.5" cy="142" r="4.6" fill="#fff"/>
+    <circle cx="183.5" cy="153" r="2.3" fill="#fff"/>
+
+    <!-- Mouth -->
+    <path d="M138 174 Q144 182 150 174 Q156 182 162 174" fill="none" stroke="#1B2A4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,26 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Flame,
   Moon,
   Sun,
   Hand,
   RotateCcw,
-  Bug,
-  Zap,
   Heart,
-  Fish,
-  Timer,
   Utensils,
   Smile,
+  Timer,
+  Sparkles,
 } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
 import { STARTER_PETS } from '../data/petConfigs';
-import { PetCanvas } from './3d/PetCanvas';
+import { PetCanvas, MASCOT_IMAGES } from './3d/PetCanvas';
 import { FoodTray } from './FoodTray';
 import { PomodoroTimer } from './PomodoroTimer';
 import { useResetPetMutation } from '../hooks/usePetQueries';
 import { tg } from '../utils/telegram';
 import { petApi } from '../api/petApi';
+import { StarterSelection } from './StarterSelection';
+import { MascotDemo } from './mascot/MascotDemo';
+import { MascotType } from './mascot/types';
+import { PetType } from '../types/pet';
+import { IconButton } from './ui/IconButton';
+import { ProgressBar } from './ui/ProgressBar';
+import { spawnFloatingReaction } from './ui/TapEffectOverlay';
+
+interface RoleTheme {
+  defaultGreeting: string;
+  wakeQuote: string;
+}
+
+const ROLE_THEMES: Record<PetType, RoleTheme> = {
+  BYTEY: {
+    defaultGreeting: 'Chào sen designer! Hôm nay chúng ta sẽ nắn pixel hay vẽ prototype nào? ✨',
+    wakeQuote: 'Oa... đã ngủ dậy rồi, sẵn sàng vẽ tiếp prototype nào! ✨',
+  },
+  PUFFY: {
+    defaultGreeting: 'Chào sếp PO/PM! Hôm nay chúng ta sẽ chốt sprint hay tối ưu roadmap nào? 📊',
+    wakeQuote: 'Oa... đã ngủ dậy rồi, sẵn sàng chốt sprint mới nào! 📊',
+  },
+  OCTY: {
+    defaultGreeting: 'Chào dũng sĩ QA! Hôm nay chúng ta sẽ rà soát và săn lùng con bug nào đây? 🔍',
+    wakeQuote: 'Oa... đã ngủ dậy rồi, sẵn sàng săn lùng bug tiếp nào! 🔍',
+  },
+  GOLEMY: {
+    defaultGreeting: 'Chào người anh em coder! Hôm nay chúng ta sẽ refactor hay code tính năng nào đây? 💻',
+    wakeQuote: 'Oa... đã ngủ dậy rồi, sẵn sàng code tiếp thôi! 💻',
+  },
+};
 
 type ActiveTab = 'PET' | 'FOCUS' | 'FOOD';
 
@@ -38,52 +67,101 @@ export const PetDashboard: React.FC = () => {
   } = usePetStore();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('PET');
-  const [speechQuote, setSpeechQuote] = useState<string>(
-    'Chào người anh em coder! Hôm nay chúng ta sẽ giải quyết bug nào đây?'
+  const [showStudio, setShowStudio] = useState<boolean>(false);
+  const [speechQuote, setSpeechQuote] = useState<string>(() =>
+    pet ? (ROLE_THEMES[pet.type]?.defaultGreeting || ROLE_THEMES.GOLEMY.defaultGreeting) : ROLE_THEMES.GOLEMY.defaultGreeting
   );
 
-  if (!pet) return null;
+  useEffect(() => {
+    if (pet) {
+      setSpeechQuote(ROLE_THEMES[pet.type]?.defaultGreeting || ROLE_THEMES.GOLEMY.defaultGreeting);
+    }
+  }, [pet?.type]);
+
+  if (showStudio) {
+    const STUDIO_TYPE: Record<string, MascotType> = { PUFFY: 'puffer', GOLEMY: 'dino', BYTEY: 'cat', OCTY: 'octo' };
+    return (
+      <MascotDemo
+        initialType={pet ? STUDIO_TYPE[pet.type] : undefined}
+        onClose={() => setShowStudio(false)}
+      />
+    );
+  }
+
+  if (!pet) return <StarterSelection />;
 
   const config = STARTER_PETS.find((p) => p.id === pet.type) || STARTER_PETS[0];
+  const roleTheme = ROLE_THEMES[pet.type] || ROLE_THEMES.GOLEMY;
 
   // Quick interactions with Haptic Feedback
   const handlePoke = async () => {
     tg.haptic.impact('medium');
     pokePet();
-    const fallbackQuotes = [
-      'Ái chà! Nhột quá haha!',
-      'Gõ phím tiếp đi, đừng chọc trẫm nữa!',
-      'Được xoa đầu sướng quá, thêm 1 Pomodoro nào!',
-      'Bé pet tăng 3 điểm hạnh phúc nè!',
-      'Hôm nay bạn code đỉnh thật đấy!',
-    ];
-    // Immediate playful reaction
-    setSpeechQuote(fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)]);
 
-    // Dynamic AI reaction from backend
+    // Spawn lively floating reward reaction in the center of the pet
+    if (typeof window !== 'undefined') {
+      const reactions = ['+3 💖', '+5 EXP ✨', '🐾 Nhột quá!', '🥰 Yêu sen!', '💖 Ngoan ghê!'];
+      const text = reactions[Math.floor(Math.random() * reactions.length)];
+      const x = window.innerWidth / 2 + (Math.random() - 0.5) * 60;
+      const y = 290 + (Math.random() - 0.5) * 40;
+      spawnFloatingReaction(x, y, text, '#FF6B8B', '💖');
+    }
+
+    const roleQuotes: Record<string, string[]> = {
+      BYTEY: [
+        'Auto-layout đỉnh chóp, căn lề 8pt grid mượt mà sen ơi!',
+        'Giao diện ngọt ngào như kẹo, user nhìn là mê liền!',
+        'Nghe lofi và vẽ prototype nào, cảm hứng đang ngập tràn!',
+        'Được xoa đầu thích ghê, tăng 3 điểm hạnh phúc nè!',
+      ],
+      OCTY: [
+        'Kính lúp Octy rà soát: Test case pass 100%!',
+        'Mọi edge case đều không thoát khỏi 4 xúc tu của trẫm!',
+        'Log bug văn minh, fix bug nhiệt tình nào sen ơi!',
+        'Zero regression bug hôm nay, chuẩn bị release thôi!',
+      ],
+      GOLEMY: [
+        'Clean code thơm tho, commit liền tay không lo conflict!',
+        'Server êm như nhung, không một lỗi 500 nào lọt qua!',
+        'Thêm 1 Pomodoro nữa là xong tính năng này rồi!',
+        'Ái chà! Nhột quá haha, gõ code tiếp đi nào!',
+      ],
+      PUFFY: [
+        'Sprint này velocity vượt chỉ tiêu, tiến độ đẹp mỹ mãn!',
+        'Requirement rõ ràng, user story chuẩn mực 10/10!',
+        'Data metrics tuần này tăng trưởng vượt bậc sen ơi!',
+        'Nạp thêm caffeine và cùng lên kế hoạch bứt phá nào!',
+      ],
+    };
+
+    const quotes = roleQuotes[pet.type] || [
+      'Được xoa đầu thích ghê, thêm 1 Pomodoro nào!',
+      'Hôm nay bạn làm việc đỉnh thật đấy!',
+      'Tập trung cao độ, hoàn thành mục tiêu ngày hôm nay nha!',
+    ];
+    setSpeechQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+
     try {
       const aiQuote = await petApi.generateSpeech(pet.customName, pet.type, pet.mood);
       if (aiQuote) setSpeechQuote(aiQuote);
     } catch {
-      // Fallback kept
+      // Fallback preserved
     }
   };
 
   const handleToggleSleep = () => {
     tg.haptic.impact('light');
     toggleSleep();
-    setSpeechQuote(pet.isSleeping ? 'Oa... đã ngủ dậy rồi, sẵn sàng code!' : 'Khò khò... trẫm đi ngủ nạp năng lượng đây Zzz');
-  };
-
-  const handleToggleDizzy = () => {
-    tg.haptic.impact('rigid');
-    if (pet.mood === 'DIZZY') {
-      setMood('HAPPY');
-      setSpeechQuote('Phù... đã hết chóng mặt rồi! Tỉnh táo lại rồi!');
-    } else {
-      setMood('DIZZY');
-      setSpeechQuote('Ôi mẹ ơi... nhiều bug quá, hoa hết cả mắt rồi @@!');
+    if (typeof window !== 'undefined') {
+      const x = window.innerWidth / 2;
+      const y = 280;
+      spawnFloatingReaction(x, y, pet.isSleeping ? '☀️ Thức dậy làm việc!' : '🌙 Khò khò Zzz...', '#8E7CFF', '💤');
     }
+    setSpeechQuote(
+      pet.isSleeping
+        ? roleTheme.wakeQuote
+        : 'Khò khò... trẫm đi ngủ nạp năng lượng đây Zzz'
+    );
   };
 
   const handleResetPet = () => {
@@ -92,212 +170,292 @@ export const PetDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-3.5 md:p-5 select-none relative pb-20">
-      {/* 1. Playful Top Bar */}
-      <header className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-slate-950 shadow-md font-['Fredoka'] text-lg border-b-2 border-black/30"
-            style={{ backgroundColor: config.primaryColor }}
-          >
-            {config.name[0]}
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-base font-black text-white font-['Fredoka']">{pet.customName}</h2>
-              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 shadow-xs">
-                Lv.{pet.level}
-              </span>
+    <div className="flex-1 flex flex-col justify-between p-4 select-none relative pb-24">
+      {/* ===================================================================
+          4.1 HEADER (Hồ sơ + Chỉ số chuẩn Playful Sticker UI)
+          =================================================================== */}
+      <header className="flex items-center justify-between gap-2 pt-1 pb-3">
+        {/* Left: Avatar + Badge + Name */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="relative shrink-0">
+            {/* 48px Avatar with 2px Ink Sticker Border */}
+            <div
+              className="w-12 h-12 rounded-full border-2 border-[var(--ink)] overflow-hidden flex items-center justify-center shadow-[0_3px_0_var(--ink)] p-1"
+              style={{ backgroundColor: `${config.primaryColor}25` }}
+            >
+              <img
+                src={MASCOT_IMAGES[pet.type] || '/mascots/puffy_clean.svg'}
+                alt={pet.customName || config.name}
+                className="w-9 h-9 object-contain drop-shadow-xs"
+              />
             </div>
-            <div className="text-[10px] text-slate-400 font-['JetBrains_Mono']">{config.archetype}</div>
+            {/* Level Badge Overlapping Bottom Right */}
+            <div className="absolute -bottom-1 -right-1 bg-[var(--grape)] text-white font-heading font-extrabold text-[11px] px-1.5 py-0.2 rounded-full border-2 border-[var(--ink)] shadow-[0_1.5px_0_var(--ink)] leading-none">
+              Lv.{pet.level ?? 1}
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-heading font-black text-[var(--ink)] leading-tight truncate">
+              {pet.customName || config.name}
+            </h2>
+            <span className="mt-0.5 inline-block max-w-full truncate whitespace-nowrap align-top text-[10px] font-heading font-black px-2 py-0.5 rounded-full bg-[var(--primary-tint)] text-[var(--ink)] border border-[#E09A00]/40 shadow-xs">
+              {config.roleBadge}
+            </span>
+            <div className="hidden min-[380px]:block text-[11px] font-semibold text-[var(--ink-soft)] truncate leading-tight mt-0.5">
+              {config.archetype}
+            </div>
           </div>
         </div>
 
-        {/* Streak & Change Pet */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-2xl shadow-xs">
-            <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <span className="text-xs font-black text-amber-300 font-['JetBrains_Mono']">{pet.streak}d</span>
+        {/* Right: Flat Streak Chip & Reset Icon Button */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Flat Streak Chip */}
+          <div className="chip-sticker bg-[var(--primary-tint)] text-[var(--ink)] py-1 px-2 whitespace-nowrap shrink-0">
+            <Flame className="w-4 h-4 text-orange-500 fill-orange-500 shrink-0" />
+            <span className="tabular-nums text-xs font-black whitespace-nowrap">{pet.streak ?? 1}<span className="hidden min-[380px]:inline"> ngày</span></span>
           </div>
 
-          <button
+          {/* Studio Playground Button */}
+          <IconButton
+            variant="sticker"
+            size={36}
+            onClick={() => setShowStudio(true)}
+            title="Mở Studio Thử Nghiệm Animation"
+            className="bg-[var(--grape-tint)] text-[var(--grape-deep)] border-2 border-[var(--ink)] shadow-xs shrink-0"
+          >
+            <Sparkles className="w-4 h-4 text-[var(--grape-deep)]" />
+          </IconButton>
+
+          {/* Reset Pet 40px Icon Button */}
+          <IconButton
+            variant="flat"
+            size={36}
             onClick={handleResetPet}
             disabled={resetMutation.isPending}
-            className="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 flex items-center justify-center border border-slate-700/60 transition-all cursor-pointer active:scale-95"
             title="Đổi thú cưng khác"
+            className="shadow-sm shrink-0"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
+            <RotateCcw className="w-4 h-4 text-[var(--ink-soft)]" />
+          </IconButton>
         </div>
       </header>
 
-      {/* EXP Progress Strip */}
-      <div className="mt-2.5 space-y-1">
-        <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
-          <span>Kinh nghiệm (EXP)</span>
-          <span className="text-cyan-300 font-['JetBrains_Mono']">{pet.exp} / {pet.maxExp}</span>
+      {/* ===================================================================
+          4.2 THANH EXP (Nhựa bóng + Sticker 2px Ink)
+          =================================================================== */}
+      <div className="my-1.5 space-y-1">
+        <div className="flex justify-between items-center text-xs font-heading font-bold text-[var(--ink)] px-1">
+          <span>Kinh nghiệm</span>
+          <span className="tabular-nums font-extrabold text-[var(--ink-soft)]">
+            {pet.exp ?? 0} / {pet.maxExp ?? 100} EXP
+          </span>
         </div>
-        <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
+        <div className="exp-bar-container shadow-[0_2px_0_var(--ink)]">
           <div
-            className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-300 shadow-sm shadow-cyan-400/50"
-            style={{ width: `${Math.min(100, (pet.exp / pet.maxExp) * 100)}%` }}
+            className="exp-bar-fill"
+            style={{ width: `${Math.min(100, ((pet.exp ?? 0) / (pet.maxExp ?? 100)) * 100)}%` }}
           />
         </div>
       </div>
 
-      {/* 2. Main Content Based on Active Tab */}
+      {/* ===================================================================
+          TAB CONTENT AREA
+          =================================================================== */}
       <main className="my-auto py-2">
         {activeTab === 'PET' && (
-          <div className="flex flex-col items-center justify-center">
-            {/* Speech Bubble */}
-            <div className="relative mb-1 max-w-xs px-3.5 py-2 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-xl backdrop-blur-md text-xs text-slate-100 text-center font-['Fredoka'] tracking-wide animate-float">
+          <div className="flex flex-col items-center">
+            {/* Speech Bubble (Sticker Card) */}
+            <div className="relative mb-2 max-w-xs px-4 py-2.5 bg-white border-2 border-[var(--ink)] rounded-2xl shadow-[0_3px_0_var(--ink)] text-xs font-bold text-[var(--ink)] text-center animate-float-gentle z-20">
               💬 {speechQuote}
-              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-slate-900 border-r border-b border-slate-700/80 rotate-45" />
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r-2 border-b-2 border-[var(--ink)] rotate-45" />
             </div>
 
-            {/* 3D Canvas Stage */}
+            {/* ===================================================================
+                4.3 SÂN KHẤU THÚ CƯNG (Sky Gradient, Flat Clouds, Grassy Platform)
+                =================================================================== */}
             <div
               onClick={handlePoke}
-              className="relative w-full h-[260px] flex items-center justify-center cursor-pointer"
+              className="relative w-full h-[290px] rounded-3xl border-2 border-[var(--ink)] shadow-[0_4px_0_var(--ink)] overflow-hidden flex flex-col items-center justify-between p-3 select-none cursor-pointer"
+              style={{
+                background: 'linear-gradient(180deg, var(--bg-sky) 0%, #FFF6E5 100%)',
+              }}
             >
-              {/* Glowing Aura */}
-              <div
-                className="absolute w-56 h-56 rounded-full blur-3xl opacity-25 pointer-events-none transition-all duration-700"
-                style={{ backgroundColor: config.primaryColor }}
-              />
+              {/* Floating Flat Cloud 1 */}
+              <div className="absolute top-4 left-4 animate-cloud-left pointer-events-none opacity-80">
+                <svg width="68" height="28" viewBox="0 0 68 28" fill="none">
+                  <path
+                    d="M14 26H54C60.6 26 66 21 66 15C66 9.4 61.4 4.8 56 4.2C54 1.6 50.8 0 47 0C41.2 0 36.4 3.8 35 9C33.8 8.4 32.4 8 31 8C26 8 22 12 22 17C17.6 17 14 20.6 14 25"
+                    fill="#FFFFFF"
+                    stroke="#2D2A4A"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+              </div>
 
-              <PetCanvas
-                type={pet.type}
-                mood={pet.mood}
-                isFeeding={isFeeding}
-                pokeTrigger={pokeAnimKey}
-                feedTrigger={feedAnimKey}
-                className="w-full h-full"
-              />
+              {/* Floating Flat Cloud 2 */}
+              <div className="absolute top-8 right-6 animate-cloud-right pointer-events-none opacity-80">
+                <svg width="56" height="24" viewBox="0 0 56 24" fill="none">
+                  <path
+                    d="M12 22H44C49 22 53 18 53 13C53 8.5 49.5 5 45 4.5C43.5 2 40.5 0.5 37 0.5C32.5 0.5 28.5 3.5 27.5 7.5C26.5 7 25.5 6.5 24 6.5C20 6.5 17 9.5 17 13.5C13.5 13.5 10.5 16.5 10.5 20"
+                    fill="#FFFFFF"
+                    stroke="#2D2A4A"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+              </div>
 
-              {/* Feeding Float Sticker */}
-              {isFeeding && activeFoodFeeding && (
-                <div className="absolute bottom-4 flex flex-col items-center pointer-events-none animate-bounce z-30">
-                  <span className="text-4xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.9)] animate-pulse">
-                    {activeFoodFeeding.icon}
-                  </span>
-                  <span className="text-[10px] font-black text-amber-300 bg-slate-950/90 px-2 py-0.5 rounded-full mt-1 border border-amber-400/50 shadow-md">
-                    +{activeFoodFeeding.hungerRestored} No bụng!
-                  </span>
+              {/* 3D Pet WebGL Canvas */}
+              <div className="relative w-full h-[220px] flex items-center justify-center z-10 mt-1">
+                <PetCanvas
+                  type={pet.type}
+                  mood={pet.mood}
+                  isFeeding={isFeeding}
+                  pokeTrigger={pokeAnimKey}
+                  feedTrigger={feedAnimKey}
+                  className="w-full h-full"
+                />
+
+                {/* Feeding Float Animation Banner */}
+                {isFeeding && activeFoodFeeding && (
+                  <div className="absolute bottom-2 flex flex-col items-center pointer-events-none animate-bounce z-30">
+                    <span className="text-sm font-heading font-black text-[var(--mint-deep)] bg-[var(--mint-tint)] border-2 border-[var(--ink)] shadow-[0_3px_0_var(--ink)] px-3 py-1 rounded-full flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5" /> +{activeFoodFeeding.hungerRestored} No bụng!
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Grassy Island Pedestal & Shadow Ellipse */}
+              <div className="relative w-44 h-8 flex items-center justify-center -mt-4 z-0">
+                {/* Soft ground shadow ellipse */}
+                <div className="absolute w-36 h-5 bg-[#2D2A4A]/15 rounded-full blur-[2px]" />
+                {/* Cute Grassy Island Pedestal */}
+                <div className="w-40 h-6 bg-[#A7E8BD] border-2 border-[var(--ink)] rounded-full shadow-[0_3px_0_var(--ink)] flex items-center justify-center">
+                  <div className="w-32 h-2.5 bg-[#84D8A2] rounded-full" />
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Tactile Quick Action Buttons */}
-            <div className="flex items-center gap-2 mt-1 flex-wrap justify-center">
+            {/* Quick Action Physical Buttons */}
+            <div className="flex items-center gap-2.5 mt-3 flex-wrap justify-center">
               <button
                 onClick={handlePoke}
-                className="px-3.5 py-2 btn-3d-cyan text-xs"
+                className="btn-chunky btn-chunky-secondary px-4 py-2 text-xs flex items-center gap-1.5"
               >
-                <Hand className="w-3.5 h-3.5" /> Chọc bé
+                <Hand className="w-4 h-4 text-[var(--coral)]" />
+                <span>Chọc bé</span>
               </button>
 
               <button
                 onClick={handleToggleSleep}
-                className="px-3.5 py-2 btn-3d-slate text-xs"
+                className="btn-chunky btn-chunky-secondary px-4 py-2 text-xs flex items-center gap-1.5"
               >
                 {pet.isSleeping ? (
                   <>
-                    <Sun className="w-3.5 h-3.5 text-amber-400" /> Thức dậy
+                    <Sun className="w-4 h-4 text-[var(--primary)]" />
+                    <span>Thức dậy</span>
                   </>
                 ) : (
                   <>
-                    <Moon className="w-3.5 h-3.5 text-indigo-400" /> Cho ngủ
+                    <Moon className="w-4 h-4 text-[var(--grape)]" />
+                    <span>Cho ngủ</span>
                   </>
                 )}
               </button>
 
               <button
-                onClick={handleToggleDizzy}
-                className={`px-3.5 py-2 text-xs rounded-2xl border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer flex items-center gap-1.5 font-bold shadow-md ${
-                  pet.mood === 'DIZZY'
-                    ? 'bg-rose-500 text-slate-950 border-rose-800'
-                    : 'bg-slate-800 text-slate-200 border-slate-950'
-                }`}
-                title="Bật biểu cảm mắt xoáy tít!"
+                onClick={() => {
+                  tg.haptic.impact('medium');
+                  setActiveTab('FOCUS');
+                  if (typeof window !== 'undefined') {
+                    const x = window.innerWidth / 2;
+                    const y = 280;
+                    spawnFloatingReaction(x, y, '⏱️ Bắt đầu tập trung!', '#FFB703', '🚀');
+                  }
+                  setSpeechQuote('Cùng bắt đầu phiên tập trung nào! Cố lên sen ơi! 🚀');
+                }}
+                className="btn-chunky btn-chunky-primary px-4 py-2 text-xs flex items-center gap-1.5"
+                title="Bắt đầu phiên Pomodoro tập trung"
               >
-                <Bug className="w-3.5 h-3.5 text-rose-400" />
-                {pet.mood === 'DIZZY' ? 'Hết bug' : 'Gặp Bug @@'}
+                <Timer className="w-4 h-4 text-[var(--ink)]" />
+                <span>Vào việc ⏱️</span>
               </button>
             </div>
 
-            {/* Soft Pill Vitals Bar */}
-            <div className="w-full grid grid-cols-3 gap-2 mt-4">
-              <div className="soft-card p-2.5 text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-bold mb-0.5">
-                  <Fish className="w-3 h-3 text-orange-400" /> No bụng
+            {/* Two Horizontal Vitals Chips (No & Vui with Mini 8px Bar) */}
+            <div className="w-full grid grid-cols-2 gap-3 mt-3">
+              {/* No Bụng Chip */}
+              <div className="card-sticker p-3 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs font-heading font-extrabold text-[var(--ink)] mb-1.5">
+                  <div className="flex items-center gap-1.5 text-[var(--mint-deep)]">
+                    <Utensils className="w-3.5 h-3.5" />
+                    <span>No bụng</span>
+                  </div>
+                  <span className="tabular-nums text-[var(--ink)]">{pet.hunger ?? 70}/100</span>
                 </div>
-                <div className="text-xs font-black text-slate-100 font-['JetBrains_Mono']">{pet.hunger}/100</div>
-                <div className="h-1.5 w-full bg-slate-950 rounded-full mt-1 overflow-hidden p-0.5">
-                  <div
-                    className="h-full bg-orange-400 rounded-full transition-all duration-300"
-                    style={{ width: `${pet.hunger}%` }}
-                  />
-                </div>
+                <ProgressBar
+                  value={pet.hunger ?? 70}
+                  max={100}
+                  variant="mint"
+                  height={10}
+                  showGloss={false}
+                />
               </div>
 
-              <div className="soft-card p-2.5 text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-bold mb-0.5">
-                  <Zap className="w-3 h-3 text-amber-400" /> Năng lượng
+              {/* Vui Vẻ Chip */}
+              <div className="card-sticker p-3 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs font-heading font-extrabold text-[var(--ink)] mb-1.5">
+                  <div className="flex items-center gap-1.5 text-[var(--coral-deep)]">
+                    <Heart className="w-3.5 h-3.5" />
+                    <span>Hạnh phúc</span>
+                  </div>
+                  <span className="tabular-nums text-[var(--ink)]">{pet.happiness ?? 85}/100</span>
                 </div>
-                <div className="text-xs font-black text-slate-100 font-['JetBrains_Mono']">{pet.energy}/100</div>
-                <div className="h-1.5 w-full bg-slate-950 rounded-full mt-1 overflow-hidden p-0.5">
-                  <div
-                    className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                    style={{ width: `${pet.energy}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="soft-card p-2.5 text-center">
-                <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-bold mb-0.5">
-                  <Heart className="w-3 h-3 text-rose-400" /> Hạnh phúc
-                </div>
-                <div className="text-xs font-black text-slate-100 font-['JetBrains_Mono']">{pet.happiness}/100</div>
-                <div className="h-1.5 w-full bg-slate-950 rounded-full mt-1 overflow-hidden p-0.5">
-                  <div
-                    className="h-full bg-rose-400 rounded-full transition-all duration-300"
-                    style={{ width: `${pet.happiness}%` }}
-                  />
-                </div>
+                <ProgressBar
+                  value={pet.happiness ?? 85}
+                  max={100}
+                  variant="coral"
+                  height={10}
+                  showGloss={false}
+                />
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'FOCUS' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="animate-pop-in">
             <PomodoroTimer />
           </div>
         )}
 
         {activeTab === 'FOOD' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="animate-pop-in">
             <FoodTray />
           </div>
         )}
       </main>
 
-      {/* 3. Telegram Mini App Fixed Bottom Thumb-Zone Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/95 border-t border-slate-800/80 px-4 py-2 backdrop-blur-xl z-50 flex items-center justify-around">
+      {/* ===================================================================
+          4.4 THANH ĐIỀU HƯỚNG DƯỚI (White Sticker Bar with Chunky Sliding Pill)
+          =================================================================== */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t-2 border-[var(--ink)] rounded-t-[24px] px-4 py-2.5 shadow-[0_-4px_16px_rgba(45,42,74,0.06)] z-50 flex items-center justify-around">
         <button
           onClick={() => {
             tg.haptic.selection();
             setActiveTab('PET');
           }}
-          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${
-            activeTab === 'PET' ? 'text-cyan-400 scale-105' : 'text-slate-500 hover:text-slate-400'
+          className={`cursor-pointer transition-all duration-200 select-none ${
+            activeTab === 'PET'
+              ? 'btn-chunky btn-chunky-primary px-4 py-2 flex items-center gap-2 shadow-[0_3px_0_var(--ink)]'
+              : 'p-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl ${activeTab === 'PET' ? 'bg-cyan-500/20' : ''}`}>
-            <Smile className="w-5 h-5" />
-          </div>
-          <span className="text-[10px] font-black font-['Fredoka']">Linh Thú</span>
+          <Smile className={`w-5 h-5 ${activeTab === 'PET' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="font-heading font-extrabold text-xs">
+            {activeTab === 'PET' ? 'Linh Thú' : ''}
+          </span>
         </button>
 
         <button
@@ -305,14 +463,16 @@ export const PetDashboard: React.FC = () => {
             tg.haptic.selection();
             setActiveTab('FOCUS');
           }}
-          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${
-            activeTab === 'FOCUS' ? 'text-cyan-400 scale-105' : 'text-slate-500 hover:text-slate-400'
+          className={`cursor-pointer transition-all duration-200 select-none ${
+            activeTab === 'FOCUS'
+              ? 'btn-chunky btn-chunky-primary px-4 py-2 flex items-center gap-2 shadow-[0_3px_0_var(--ink)]'
+              : 'p-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl ${activeTab === 'FOCUS' ? 'bg-cyan-500/20' : ''}`}>
-            <Timer className="w-5 h-5" />
-          </div>
-          <span className="text-[10px] font-black font-['Fredoka']">Pomodoro</span>
+          <Timer className={`w-5 h-5 ${activeTab === 'FOCUS' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="font-heading font-extrabold text-xs">
+            {activeTab === 'FOCUS' ? 'Pomodoro' : ''}
+          </span>
         </button>
 
         <button
@@ -320,14 +480,16 @@ export const PetDashboard: React.FC = () => {
             tg.haptic.selection();
             setActiveTab('FOOD');
           }}
-          className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${
-            activeTab === 'FOOD' ? 'text-cyan-400 scale-105' : 'text-slate-500 hover:text-slate-400'
+          className={`cursor-pointer transition-all duration-200 select-none ${
+            activeTab === 'FOOD'
+              ? 'btn-chunky btn-chunky-primary px-4 py-2 flex items-center gap-2 shadow-[0_3px_0_var(--ink)]'
+              : 'p-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl ${activeTab === 'FOOD' ? 'bg-cyan-500/20' : ''}`}>
-            <Utensils className="w-5 h-5" />
-          </div>
-          <span className="text-[10px] font-black font-['Fredoka']">Túi Đồ Ăn</span>
+          <Utensils className={`w-5 h-5 ${activeTab === 'FOOD' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="font-heading font-extrabold text-xs">
+            {activeTab === 'FOOD' ? 'Túi Đồ Ăn' : ''}
+          </span>
         </button>
       </nav>
     </div>

@@ -15,6 +15,8 @@ model User {
   firstName    String?
   streak       Int            @default(0)
   lastActive   DateTime       @default(now())
+  lastCheckinAt DateTime?
+  lastPokedAt  DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 

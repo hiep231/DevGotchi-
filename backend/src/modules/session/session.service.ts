@@ -10,22 +10,29 @@ const FOOD_DROPS = ['shrimp', 'fish_ram', 'docker_jelly', 'coffee_donut'];
 export class SessionService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly petService: PetService
+    private readonly petService: PetService,
   ) {}
 
-  async completeSession(dto: CompleteSessionDto) {
-    const baseExp = dto.durationMinutes * 4;
-    const petRes = await this.petService.getMyPet();
-    let pet = petRes.data;
+  async completeSession(dto: CompleteSessionDto, telegramId?: number) {
+    const tid = telegramId ? BigInt(telegramId) : BigInt(123456);
 
+    const user = await this.prisma.user.upsert({
+      where: { telegramId: tid },
+      create: { telegramId: tid, username: `user_${tid}` },
+      update: { lastActive: new Date() },
+      include: { pet: true },
+    });
+
+    let pet = user.pet;
     if (!pet) {
-      const defaultAdopt = await this.petService.adoptPet({
-        type: PetTypeEnum.PUFFY,
-        name: 'Puffy',
-      });
+      const defaultAdopt = await this.petService.adoptPet(
+        { type: PetTypeEnum.PUFFY, name: 'Puffy' },
+        telegramId,
+      );
       pet = defaultAdopt.data;
     }
 
+    const baseExp = dto.durationMinutes * 4;
     let bonusMultiplier = 0;
     if (pet.type === PetTypeEnum.PUFFY && dto.durationMinutes <= 25) {
       bonusMultiplier = 0.2;
@@ -46,30 +53,52 @@ export class SessionService {
       leveledUp = true;
     }
 
-    // Award food drop
     const droppedFood = FOOD_DROPS[Math.floor(Math.random() * FOOD_DROPS.length)];
 
-    // Update in-memory pet stats
-    pet.level = newLevel;
-    pet.exp = newExp;
-    pet.maxExp = newMaxExp;
-    pet.totalFocusMinutes = (pet.totalFocusMinutes || 0) + dto.durationMinutes;
-    pet.energy = Math.max(10, pet.energy - 10);
-    pet.happiness = Math.min(100, pet.happiness + 15);
-    pet.mood = 'HAPPY';
+    const updatedPet = await this.prisma.pet.update({
+      where: { id: pet.id },
+      data: {
+        level: newLevel,
+        exp: newExp,
+        maxExp: newMaxExp,
+        totalFocusMinutes: pet.totalFocusMinutes + dto.durationMinutes,
+        energy: Math.max(10, pet.energy - 10),
+        happiness: Math.min(100, pet.happiness + 15),
+        mood: 'HAPPY',
+      },
+    });
 
-    try {
-      if (this.prisma.focusSession) {
-        // Record session in DB if available
-      }
-    } catch {
-      // Fallback
-    }
+    await this.prisma.focusSession.create({
+      data: {
+        userId: user.id,
+        durationMin: dto.durationMinutes,
+        tag: dto.tag,
+        expGained,
+      },
+    });
+
+    // Award food drop in user's inventory
+    await this.prisma.inventoryItem.upsert({
+      where: {
+        userId_foodId: {
+          userId: user.id,
+          foodId: droppedFood,
+        },
+      },
+      create: {
+        userId: user.id,
+        foodId: droppedFood,
+        count: 1,
+      },
+      update: {
+        count: { increment: 1 },
+      },
+    });
 
     return {
       success: true,
       data: {
-        pet,
+        pet: updatedPet,
         expGained,
         leveledUp,
         droppedFood,

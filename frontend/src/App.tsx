@@ -17,25 +17,27 @@ export const App: React.FC = () => {
 
   // Sync server pet to zustand store whenever server query settles
   useEffect(() => {
-    if (serverPet !== undefined) {
+    if (!isLoading && serverPet !== undefined) {
       setPet(serverPet);
     }
-  }, [serverPet, setPet]);
+  }, [serverPet, isLoading, setPet]);
 
-  const activePet = localPet ?? serverPet;
-
-  if (isLoading && !activePet) {
+  // When loading account data from backend, display cute loader to prevent leaking previous user's pet
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FFF6E5] text-[#2D2A4A] flex flex-col items-center justify-center gap-3">
         <div className="w-12 h-12 rounded-2xl bg-[var(--primary)] border-2 border-[var(--ink)] shadow-[0_4px_0_var(--ink)] flex items-center justify-center animate-bounce">
           <span className="text-xl">🐾</span>
         </div>
         <span className="text-sm font-heading font-extrabold text-[var(--ink-soft)] tracking-wide">
-          Đang nạp DevGotchi...
+          Đang nạp dữ liệu DevGotchi...
         </span>
       </div>
     );
   }
+
+  // Once loaded: serverPet is authoritative if defined, otherwise localPet
+  const activePet = serverPet !== undefined ? serverPet : localPet;
 
   return (
     <div className="min-h-screen bg-[#F5EDE0] text-[#2D2A4A] flex justify-center">

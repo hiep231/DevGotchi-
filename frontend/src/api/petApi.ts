@@ -1,9 +1,7 @@
 import { FoodItem, PetState, PetType } from '../types/pet';
 import { INITIAL_FOODS, STARTER_PETS } from '../data/petConfigs';
 import { tg } from '../utils/telegram';
-
-const STORAGE_KEY = 'devgotchi_pet_state_v1';
-const FOOD_STORAGE_KEY = 'devgotchi_food_state_v1';
+import { getStorageKey, getFoodStorageKey } from '../store/usePetStore';
 
 function getTelegramIdParam(): string {
   const tid = tg.user?.id;
@@ -35,7 +33,7 @@ export const petApi = {
       // Offline fallback
     }
 
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(getStorageKey());
     return saved ? JSON.parse(saved) : null;
   },
 
@@ -51,7 +49,7 @@ export const petApi = {
       // Offline fallback
     }
 
-    const saved = localStorage.getItem(FOOD_STORAGE_KEY);
+    const saved = localStorage.getItem(getFoodStorageKey());
     if (!saved) return INITIAL_FOODS;
     try {
       const parsed: FoodItem[] = JSON.parse(saved);
@@ -84,8 +82,8 @@ export const petApi = {
       lastFedAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newPet));
-    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(INITIAL_FOODS));
+    localStorage.setItem(getStorageKey(), JSON.stringify(newPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(INITIAL_FOODS));
 
     try {
       await fetch(`/api/pets/adopt${getTelegramIdParam()}`, {
@@ -124,8 +122,8 @@ export const petApi = {
       lastFedAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
-    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
 
     try {
       const res = await fetch(`/api/pets/feed${getTelegramIdParam()}`, {
@@ -141,7 +139,7 @@ export const petApi = {
             ...json.data,
             customName: json.data.customName || updatedPet.customName,
           };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+          localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
         }
       }
     } catch {
@@ -198,8 +196,8 @@ export const petApi = {
       mood: 'HAPPY',
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
-    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
 
     try {
       await fetch(`/api/sessions/complete${getTelegramIdParam()}`, {
@@ -216,8 +214,8 @@ export const petApi = {
 
   // Reset Pet
   async resetPet(): Promise<void> {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(FOOD_STORAGE_KEY);
+    localStorage.removeItem(getStorageKey());
+    localStorage.removeItem(getFoodStorageKey());
     try {
       await fetch('/api/pets/reset', { method: 'POST' });
     } catch {

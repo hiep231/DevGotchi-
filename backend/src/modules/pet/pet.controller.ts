@@ -22,12 +22,14 @@ export class PetController {
 
   @Post('feed')
   @UsePipes(new ValidationPipe({ transform: true }))
-  async feedPet(@Body() dto: FeedPetDto) {
-    return this.petService.feedPet(dto);
+  async feedPet(@Body() dto: FeedPetDto, @Query('telegramId') telegramId?: string) {
+    const tid = telegramId ? parseInt(telegramId, 10) : undefined;
+    return this.petService.feedPet(dto, tid);
   }
 
   @Post('reset')
-  async resetPet() {
-    return this.petService.resetPet();
+  async resetPet(@Query('telegramId') telegramId?: string) {
+    const tid = telegramId ? parseInt(telegramId, 10) : undefined;
+    return this.petService.resetPet(tid);
   }
 }

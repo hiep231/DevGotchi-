@@ -26,12 +26,21 @@ interface PetStore {
   endFeedingAnim: () => void;
 }
 
-const STORAGE_KEY = 'devgotchi_pet_state_v1';
-const FOOD_STORAGE_KEY = 'devgotchi_food_state_v1';
+import { tg } from '../utils/telegram';
+
+export const getStorageKey = (): string => {
+  const tid = tg.user?.id;
+  return tid ? `devgotchi_pet_${tid}_v2` : 'devgotchi_pet_guest_v2';
+};
+
+export const getFoodStorageKey = (): string => {
+  const tid = tg.user?.id;
+  return tid ? `devgotchi_food_${tid}_v2` : 'devgotchi_food_guest_v2';
+};
 
 const getInitialPet = (): PetState | null => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(getStorageKey());
     return saved ? JSON.parse(saved) : null;
   } catch {
     return null;
@@ -40,7 +49,7 @@ const getInitialPet = (): PetState | null => {
 
 const getInitialFoods = (): FoodItem[] => {
   try {
-    const saved = localStorage.getItem(FOOD_STORAGE_KEY);
+    const saved = localStorage.getItem(getFoodStorageKey());
     if (!saved) return INITIAL_FOODS;
     const parsed: FoodItem[] = JSON.parse(saved);
     // Keep saved counts, but seamlessly add new foods from INITIAL_FOODS
@@ -65,11 +74,11 @@ export const usePetStore = create<PetStore>((set, get) => ({
   setPet: (pet: PetState | null) => {
     if (pet) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(pet));
+        localStorage.setItem(getStorageKey(), JSON.stringify(pet));
       } catch {}
     } else {
       try {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(getStorageKey());
       } catch {}
     }
     set({ pet });
@@ -96,8 +105,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
       lastFedAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newPet));
-    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(INITIAL_FOODS));
+    localStorage.setItem(getStorageKey(), JSON.stringify(newPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(INITIAL_FOODS));
     set({ pet: newPet, foods: INITIAL_FOODS });
   },
 
@@ -126,8 +135,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
       lastFedAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
-    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
 
     set((state) => ({
       pet: updatedPet,
@@ -146,8 +155,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
   },
 
   applyFeeding: (food: FoodItem, updatedPet: PetState, updatedFoods: FoodItem[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
-    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
 
     set((state) => ({
       pet: updatedPet,
@@ -177,7 +186,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
       mood: pet.mood === 'DIZZY' ? 'HAPPY' : pet.mood,
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
     set((state) => ({
       pet: updatedPet,
       pokeAnimKey: state.pokeAnimKey + 1,
@@ -188,7 +197,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
     const { pet } = get();
     if (!pet) return;
     const updatedPet: PetState = { ...pet, mood };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
     set({ pet: updatedPet });
   },
 
@@ -202,7 +211,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
       mood: isSleeping ? 'SLEEPING' : 'HAPPY',
       energy: isSleeping ? Math.min(100, pet.energy + 20) : pet.energy,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
     set({ pet: updatedPet });
   },
 
@@ -251,8 +260,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
       mood: 'HAPPY',
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
-    localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(updatedFoods));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
     set({ pet: updatedPet, foods: updatedFoods });
 
     return { expGained, leveledUp };
@@ -267,13 +276,13 @@ export const usePetStore = create<PetStore>((set, get) => ({
       happiness: newHappiness,
       mood: 'DIZZY',
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
     set({ pet: updatedPet });
   },
 
   resetPet: () => {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(FOOD_STORAGE_KEY);
+    localStorage.removeItem(getStorageKey());
+    localStorage.removeItem(getFoodStorageKey());
     set({ pet: null, foods: INITIAL_FOODS });
   },
 }));

@@ -29,6 +29,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(BotService.name);
   private bot: Telegraf | null = null;
   private readonly activeTimers = new Map<number, NodeJS.Timeout>();
+  private readonly chatCooldowns = new Map<number, number>();
 
   constructor(
     private readonly config: ConfigService,
@@ -286,7 +287,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await this.executeFeedItem(ctx, foodId);
     });
 
-    // 8. Natural Language Text Chat with Pet Persona (AI Gemini)
+    // 8. Natural Language Text Chat with Pet Persona (AI Gemini) with Anti-Spam Rate Limit
     this.bot.on('text', async (ctx) => {
       const text = ctx.message.text.trim();
       if (text.startsWith('/')) return; // Ignore slash commands
@@ -294,6 +295,22 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       try {
         const from = ctx.from;
         if (!from) return;
+
+        // Anti-Spam Rate Limiter: 4 seconds cooldown per user
+        const now = Date.now();
+        const lastChat = this.chatCooldowns.get(from.id) || 0;
+        if (now - lastChat < 4000) {
+          const remain = Math.ceil((4000 - (now - lastChat)) / 1000);
+          await ctx.reply(
+            `🐾 <b>Bé đang gõ phím suy nghĩ, đợi ${remain}s nữa hãy nhắn tiếp nhé sen!</b> ⏳`,
+            { parse_mode: 'HTML' },
+          );
+          return;
+        }
+        this.chatCooldowns.set(from.id, now);
+
+        // Sanitize and limit length
+        const cleanText = text.slice(0, 250);
 
         const user = await this.prisma.user.findUnique({
           where: { telegramId: BigInt(from.id) },
@@ -306,7 +323,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
         await ctx.sendChatAction('typing');
 
-        const reply = await this.aiService.chatWithPet(petName, petType, text);
+        const reply = await this.aiService.chatWithPet(petName, petType, cleanText);
         const emoji = PET_EMOJIS[petType] || '🐾';
 
         await ctx.reply(`${emoji} <b>${petName}:</b> ${reply}`, { parse_mode: 'HTML' });
@@ -370,7 +387,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Sub-handler: Poke Pet
+  // Sub-handler: Poke Pet with Cooldown & Max Happiness Cap
   private async handlePoke(ctx: any) {
     try {
       const from = ctx.from;
@@ -386,11 +403,46 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
+      const now = new Date();
+      const COOLDOWN_SECONDS = 15;
+
+      // Check Poke Cooldown (15 seconds)
+      if (user.lastPokedAt) {
+        const diffSeconds = (now.getTime() - new Date(user.lastPokedAt).getTime()) / 1000;
+        if (diffSeconds < COOLDOWN_SECONDS) {
+          const remain = Math.ceil(COOLDOWN_SECONDS - diffSeconds);
+          await ctx.reply(
+            `🐾 <b>${user.pet.name} đang nghỉ ngơi một lát!</b>\n` +
+            `Bé vừa được cưng nựng rồi, hãy đợi <b>${remain} giây</b> nữa hãy xoa tiếp nhé! 🥰`,
+            { parse_mode: 'HTML' },
+          );
+          return;
+        }
+      }
+
+      // Check Happiness Cap
+      if (user.pet.happiness >= 100) {
+        const emoji = PET_EMOJIS[user.pet.type] || '🐾';
+        await ctx.reply(
+          `${emoji} <b>${user.pet.name} đang hạnh phúc tối đa (100/100 💖)!</b>\n\n` +
+          `Bé đang vui sướng tuyệt đối rồi! Hãy tập trung làm một phiên Pomodoro (<code>/focus 25</code>) để duy trì phong độ nhé!`,
+          { parse_mode: 'HTML' },
+        );
+        return;
+      }
+
       const newHappy = Math.min(100, user.pet.happiness + 3);
-      await this.prisma.pet.update({
-        where: { id: user.pet.id },
-        data: { happiness: newHappy },
-      });
+
+      await this.prisma.$transaction([
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: { lastPokedAt: now, lastActive: now },
+        }),
+        this.prisma.pet.update({
+          where: { id: user.pet.id },
+          data: { happiness: newHappy },
+        }),
+      ]);
 
       const emoji = PET_EMOJIS[user.pet.type] || '🐾';
       const pokeQuotes = [
@@ -410,7 +462,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Sub-handler: Show Feed Menu
+  // Sub-handler: Show Feed Menu with real inventory stock
   private async handleFeed(ctx: any) {
     try {
       const from = ctx.from;
@@ -426,11 +478,25 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
+      let inventory = user.inventory;
+      if (inventory.length === 0) {
+        // Initialize starter food supplies (3 of each)
+        await Promise.all([
+          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'shrimp', count: 3 } }),
+          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'fish_ram', count: 3 } }),
+          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'docker_jelly', count: 3 } }),
+          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'coffee_donut', count: 3 } }),
+        ]);
+        inventory = await this.prisma.inventoryItem.findMany({ where: { userId: user.id } });
+      }
+
+      const getCount = (id: string) => inventory.find((i) => i.foodId === id)?.count ?? 0;
+
       const foods = [
-        { id: 'shrimp', name: '🦐 Tôm Debug (+25 no, +10 vui)' },
-        { id: 'fish_ram', name: '🐟 Bánh Cá RAM (+25 no, +10 vui)' },
-        { id: 'docker_jelly', name: '🐳 Thạch Docker (+25 no, +10 vui)' },
-        { id: 'coffee_donut', name: '🍩 Donut Espresso (+25 no, +10 vui)' },
+        { id: 'shrimp', name: `🦐 Tôm Debug (Còn x${getCount('shrimp')})` },
+        { id: 'fish_ram', name: `🐟 Bánh Cá RAM (Còn x${getCount('fish_ram')})` },
+        { id: 'docker_jelly', name: `🐳 Thạch Docker (Còn x${getCount('docker_jelly')})` },
+        { id: 'coffee_donut', name: `🍩 Donut Espresso (Còn x${getCount('coffee_donut')})` },
       ];
 
       const buttons = foods.map((f) => [Markup.button.callback(`Cho ăn ${f.name}`, `feed_item_${f.id}`)]);
@@ -449,7 +515,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Execute feeding an item
+  // Execute feeding an item with Full Hunger check & Inventory consumption
   private async executeFeedItem(ctx: any, foodId: string) {
     try {
       const from = ctx.from;
@@ -457,22 +523,53 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
       const user = await this.prisma.user.findUnique({
         where: { telegramId: BigInt(from.id) },
-        include: { pet: true },
+        include: { pet: true, inventory: true },
       });
 
       if (!user?.pet) return;
 
+      // 1. Check if Pet is already full (hunger >= 100)
+      if (user.pet.hunger >= 100) {
+        await ctx.answerCbQuery('Bé đã no căng bụng rồi!');
+        const emoji = PET_EMOJIS[user.pet.type] || '🐾';
+        await ctx.reply(
+          `${emoji} <b>${user.pet.name} đã no căng bụng rồi (100/100 🍖)!</b>\n\n` +
+          `Không nên ép bé ăn quá no nha sen! Hãy cùng làm một phiên Pomodoro (<code>/focus 25</code>) để tiêu hao calo và đói bụng rồi hãy ăn tiếp nhé!`,
+          { parse_mode: 'HTML' },
+        );
+        return;
+      }
+
+      // 2. Check and consume inventory item
+      const item = user.inventory.find((i) => i.foodId === foodId);
+      if (!item || item.count <= 0) {
+        await ctx.answerCbQuery('Món này đã hết!');
+        await ctx.reply(
+          `📦 <b>Món ăn này trong túi đồ của bạn đã hết!</b>\n\n` +
+          `👉 Bạn hãy dùng lệnh <code>/checkin</code> để nhận quà mỗi ngày, hoặc hoàn thành các phiên Pomodoro (<code>/focus 25</code>) để nhặt thêm thức ăn nhé!`,
+          { parse_mode: 'HTML' },
+        );
+        return;
+      }
+
+      // 3. Decrement inventory and boost hunger
       const newHunger = Math.min(100, user.pet.hunger + 25);
       const newHappy = Math.min(100, user.pet.happiness + 10);
 
-      await this.prisma.pet.update({
-        where: { id: user.pet.id },
-        data: {
-          hunger: newHunger,
-          happiness: newHappy,
-          lastFedAt: new Date(),
-        },
-      });
+      await this.prisma.$transaction([
+        this.prisma.inventoryItem.update({
+          where: { id: item.id },
+          data: { count: item.count - 1 },
+        }),
+        this.prisma.pet.update({
+          where: { id: user.pet.id },
+          data: {
+            hunger: newHunger,
+            happiness: newHappy,
+            lastFedAt: new Date(),
+          },
+        }),
+      ]);
 
       await ctx.answerCbQuery('😋 Măm măm ngon quá!');
       const emoji = PET_EMOJIS[user.pet.type] || '🐾';
@@ -481,6 +578,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         `${emoji} <b>${user.pet.name} đã được ăn no nê!</b>\n` +
         `🍖 No bụng: <b>${newHunger}/100</b> (+25)\n` +
         `💖 Hạnh phúc: <b>${newHappy}/100</b> (+10)\n` +
+        `📦 Còn lại trong túi: <b>${item.count - 1} phần</b>\n` +
         `💬 <i>"Cảm ơn sen nhé, no bụng rồi chiến tiếp thôi nào!"</i>`,
         { parse_mode: 'HTML' },
       );
@@ -489,7 +587,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Daily Checkin
+  // Daily Checkin with strict Anti-Spam / Anti-Cheat
   private async handleCheckin(ctx: any) {
     try {
       const from = ctx.from;
@@ -497,7 +595,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
       const user = await this.prisma.user.findUnique({
         where: { telegramId: BigInt(from.id) },
-        include: { pet: true },
+        include: { pet: true, inventory: true },
       });
 
       if (!user?.pet) {
@@ -505,33 +603,118 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      const newExp = user.pet.exp + 25;
+      const now = new Date();
+
+      // Check if already checked in today (same calendar day)
+      if (user.lastCheckinAt) {
+        const last = new Date(user.lastCheckinAt);
+        const isSameDay =
+          last.getFullYear() === now.getFullYear() &&
+          last.getMonth() === now.getMonth() &&
+          last.getDate() === now.getDate();
+
+        if (isSameDay) {
+          // Calculate time left until midnight reset (00:00)
+          const nextMidnight = new Date(now);
+          nextMidnight.setHours(24, 0, 0, 0);
+          const diffMs = nextMidnight.getTime() - now.getTime();
+          const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+          const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+          await ctx.reply(
+            `⏳ <b>BẠN ĐÃ ĐIỂM DANH HÔM NAY RỒI!</b>\n\n` +
+            `🎁 Mỗi ngày bạn chỉ được điểm danh nhận quà <b>1 lần duy nhất</b>.\n` +
+            `⏰ Lượt điểm danh tiếp theo sẽ mở sau <b>${hoursLeft} giờ ${minutesLeft} phút</b> nữa (00:00 sáng mai)!\n\n` +
+            `🔥 Chuỗi Streak hiện tại: <b>${user.streak} ngày liên tục</b>\n` +
+            `💡 Trong lúc chờ, hãy hoàn thành phiên Pomodoro (<code>/focus 25</code>) để cày EXP cho ${user.pet.name} nhé!`,
+            { parse_mode: 'HTML' },
+          );
+          return;
+        }
+      }
+
+      // Calculate streak
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      let newStreak = user.streak;
+      if (user.lastCheckinAt) {
+        const diffDays = Math.floor((now.getTime() - new Date(user.lastCheckinAt).getTime()) / oneDayMs);
+        if (diffDays === 1) {
+          newStreak += 1;
+        } else if (diffDays > 1) {
+          newStreak = 1; // Streak broken
+        }
+      } else {
+        newStreak = 1;
+      }
+
+      // Calculate EXP and Level Up with proper while loop
+      let newExp = user.pet.exp + 25;
       let newLevel = user.pet.level;
       let newMax = user.pet.maxExp;
       let leveledUp = false;
 
-      if (newExp >= newMax) {
+      while (newExp >= newMax) {
+        newExp -= newMax;
         newLevel += 1;
         newMax = Math.round(newMax * 1.35);
         leveledUp = true;
       }
 
-      await this.prisma.pet.update({
-        where: { id: user.pet.id },
-        data: {
-          exp: newExp,
-          level: newLevel,
-          maxExp: newMax,
-        },
-      });
+      // Grant a random food item in inventory
+      const foodKeys = ['shrimp', 'fish_ram', 'docker_jelly', 'coffee_donut'];
+      const randomFood = foodKeys[Math.floor(Math.random() * foodKeys.length)];
+
+      await this.prisma.$transaction([
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            lastCheckinAt: now,
+            streak: newStreak,
+            lastActive: now,
+          },
+        }),
+        this.prisma.pet.update({
+          where: { id: user.pet.id },
+          data: {
+            exp: newExp,
+            level: newLevel,
+            maxExp: newMax,
+          },
+        }),
+        this.prisma.inventoryItem.upsert({
+          where: {
+            userId_foodId: {
+              userId: user.id,
+              foodId: randomFood,
+            },
+          },
+          create: {
+            userId: user.id,
+            foodId: randomFood,
+            count: 1,
+          },
+          update: {
+            count: { increment: 1 },
+          },
+        }),
+      ]);
 
       const emoji = PET_EMOJIS[user.pet.type] || '🐾';
+      const foodNames: Record<string, string> = {
+        shrimp: '🦐 Tôm Debug',
+        fish_ram: '🐟 Bánh Cá RAM',
+        docker_jelly: '🐳 Thạch Docker',
+        coffee_donut: '🍩 Donut Espresso',
+      };
+
       await ctx.reply(
         `🎁 <b>ĐIỂM DANH HÀNG NGÀY THÀNH CÔNG!</b>\n\n` +
-        `⭐ Bạn nhận được <b>+25 EXP</b>!\n` +
-        `🍱 Rơi thêm <b>1 Hộp Thức Ăn Công Nghệ</b> vào túi đồ!\n` +
-        `${leveledUp ? `🎉 <b>CHÚC MỪNG: ${user.pet.name} ĐÃ LÊN CẤP ${newLevel}!</b> 👑\n` : ''}` +
-        `📊 Cấp hiện tại: <b>Lv.${newLevel}</b> (${newExp}/${newMax} EXP)`,
+        `⭐ Thưởng: <b>+25 EXP</b>\n` +
+        `🍱 Quà tặng: Nhận thêm <b>1x ${foodNames[randomFood]}</b> vào túi đồ!\n` +
+        `🔥 Chuỗi Streak: <b>${newStreak} ngày liên tục</b>\n` +
+        `${leveledUp ? `👑 <b>CHÚC MỪNG: ${user.pet.name} ĐÃ LÊN CẤP ${newLevel}!</b> 🎉\n` : ''}` +
+        `📊 Cấp hiện tại: <b>Lv.${newLevel}</b> (${newExp}/${newMax} EXP)\n\n` +
+        `<i>Hẹn gặp lại bạn vào ngày mai để tiếp tục duy trì Streak nhé!</i>`,
         { parse_mode: 'HTML' },
       );
     } catch (err) {

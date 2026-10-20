@@ -21,114 +21,120 @@ const FOOD_NUTRITION: Record<string, { hunger: number; happiness: number }> = {
 export class PetService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // In-memory fallback if Database is not yet running
-  private inMemoryPet: any = null;
-
   async getMyPet(telegramId?: number) {
-    try {
-      if (this.prisma.pet) {
-        let user;
-        if (telegramId) {
-          user = await this.prisma.user.findUnique({
-            where: { telegramId: BigInt(telegramId) },
-            include: { pet: true },
-          });
-        }
-
-        if (user?.pet) {
-          return { success: true, data: user.pet };
-        }
-      }
-    } catch {
-      // Fallback
+    if (!telegramId) {
+      return { success: true, data: null };
     }
 
-    return { success: true, data: this.inMemoryPet };
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { telegramId: BigInt(telegramId) },
+        include: { pet: true },
+      });
+
+      if (user?.pet) {
+        return { success: true, data: user.pet };
+      }
+    } catch (err) {
+      console.error('getMyPet error:', err);
+    }
+
+    // New user with no pet yet -> always return null
+    return { success: true, data: null };
   }
 
   async adoptPet(dto: AdoptPetDto, telegramId?: number) {
-    const updated = {
-      id: `pet_${Date.now()}`,
-      userId: 'user_default',
-      type: dto.type,
-      name: dto.name.trim(),
-      customName: dto.name.trim(),
-      level: 1,
-      exp: 0,
-      maxExp: 100,
-      hunger: 70,
-      energy: 85,
-      happiness: 90,
-      streak: 1,
-      mood: 'HAPPY',
-      isSleeping: false,
-      totalFocusMinutes: 0,
-      lastFedAt: new Date(),
-    };
-    this.inMemoryPet = updated;
+    const tid = telegramId ? BigInt(telegramId) : BigInt(123456);
 
     try {
-      if (this.prisma.pet) {
-        // Find or create user
-        const user = await this.prisma.user.upsert({
-          where: { telegramId: telegramId ? BigInt(telegramId) : BigInt(123456) },
-          create: {
-            telegramId: telegramId ? BigInt(telegramId) : BigInt(123456),
-            username: 'dev_hero',
-          },
-          update: { lastActive: new Date() },
-        });
+      // Find or create user strictly by telegramId
+      const user = await this.prisma.user.upsert({
+        where: { telegramId: tid },
+        create: {
+          telegramId: tid,
+          username: `user_${tid}`,
+        },
+        update: { lastActive: new Date() },
+      });
 
-        const pet = await this.prisma.pet.upsert({
-          where: { userId: user.id },
-          create: {
-            userId: user.id,
-            type: dto.type,
-            name: dto.name,
-          },
-          update: {
-            type: dto.type,
-            name: dto.name,
-            level: 1,
-            exp: 0,
-            hunger: 70,
-            happiness: 90,
-          },
-        });
+      const pet = await this.prisma.pet.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          type: dto.type,
+          name: dto.name.trim(),
+          level: 1,
+          exp: 0,
+          maxExp: 100,
+          hunger: 70,
+          energy: 85,
+          happiness: 90,
+        },
+        update: {
+          type: dto.type,
+          name: dto.name.trim(),
+        },
+      });
 
-        return { success: true, data: pet };
-      }
-    } catch {
-      // Fallback
+      return { success: true, data: pet };
+    } catch (err) {
+      console.error('adoptPet error:', err);
+      throw err;
     }
-
-    return { success: true, data: updated };
   }
 
-  async feedPet(dto: FeedPetDto) {
-    if (!this.inMemoryPet) {
+  async feedPet(dto: FeedPetDto, telegramId?: number) {
+    const tid = telegramId ? BigInt(telegramId) : BigInt(123456);
+
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: tid },
+      include: { pet: true },
+    });
+
+    if (!user?.pet) {
       throw new NotFoundException('No pet found to feed. Please adopt a pet first.');
     }
 
+    const pet = user.pet;
     const nutrition = FOOD_NUTRITION[dto.foodId] || { hunger: 20, happiness: 10 };
-    const isFav = FAVORITE_FOOD_MAP[this.inMemoryPet.type] === dto.foodId;
+    const isFav = FAVORITE_FOOD_MAP[pet.type] === dto.foodId;
 
     const hungerBoost = isFav ? nutrition.hunger + 15 : nutrition.hunger;
     const happyBoost = isFav ? nutrition.happiness + 15 : nutrition.happiness;
 
-    this.inMemoryPet.hunger = Math.min(100, this.inMemoryPet.hunger + hungerBoost);
-    this.inMemoryPet.happiness = Math.min(100, this.inMemoryPet.happiness + happyBoost);
-    this.inMemoryPet.lastFedAt = new Date();
+    const newHunger = Math.min(100, pet.hunger + hungerBoost);
+    const newHappy = Math.min(100, pet.happiness + happyBoost);
+
+    const updated = await this.prisma.pet.update({
+      where: { id: pet.id },
+      data: {
+        hunger: newHunger,
+        happiness: newHappy,
+        lastFedAt: new Date(),
+      },
+    });
 
     return {
       success: true,
-      data: this.inMemoryPet,
+      data: updated,
       message: isFav ? 'Khoái khẩu! Thưởng thêm 15 điểm no & vui vẻ!' : 'Bé pet đã được ăn no!',
     };
   }
 
-  async resetPet() {
-    this.inMemoryPet = null;
+  async resetPet(telegramId?: number) {
+    if (telegramId) {
+      try {
+        const user = await this.prisma.user.findUnique({
+          where: { telegramId: BigInt(telegramId) },
+          include: { pet: true },
+        });
+        if (user?.pet) {
+          await this.prisma.pet.delete({ where: { id: user.pet.id } });
+        }
+      } catch (err) {
+        console.error('resetPet error:', err);
+      }
+    }
     return { success: true, message: 'Pet reset successfully' };
   }
 }

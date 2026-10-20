@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Flame,
@@ -72,6 +72,7 @@ export const PetDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('PET');
   const [showStudio, setShowStudio] = useState<boolean>(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
+  const lastPokeTimeRef = useRef<number>(0);
   const [speechQuote, setSpeechQuote] = useState<string>(() =>
     pet ? (ROLE_THEMES[pet.type]?.defaultGreeting || ROLE_THEMES.GOLEMY.defaultGreeting) : ROLE_THEMES.GOLEMY.defaultGreeting
   );
@@ -97,8 +98,21 @@ export const PetDashboard: React.FC = () => {
   const config = STARTER_PETS.find((p) => p.id === pet.type) || STARTER_PETS[0];
   const roleTheme = ROLE_THEMES[pet.type] || ROLE_THEMES.GOLEMY;
 
-  // Quick interactions with Haptic Feedback
+  // Quick interactions with Haptic Feedback & Anti-Spam Cooldown
   const handlePoke = async () => {
+    const now = Date.now();
+    if (now - lastPokeTimeRef.current < 1500) {
+      // Ignore rapid spam clicks (< 1.5s)
+      return;
+    }
+    lastPokeTimeRef.current = now;
+
+    if (pet.happiness >= 100) {
+      tg.haptic.notification('warning');
+      setSpeechQuote('Trẫm đang hạnh phúc 100% rồi, sen tập trung code đi nhé! 💖');
+      return;
+    }
+
     tg.haptic.impact('medium');
     pokePet();
 

@@ -59,9 +59,7 @@ export const FoodTray: React.FC = () => {
     isFav: boolean;
   } | null>(null);
 
-  if (!pet) return null;
-
-  const config = STARTER_PETS.find((p) => p.id === pet.type);
+  const config = pet ? STARTER_PETS.find((p) => p.id === pet.type) : undefined;
 
   // Filter foods based on active tab
   const filteredFoods = useMemo(() => {
@@ -74,6 +72,8 @@ export const FoodTray: React.FC = () => {
       return true;
     });
   }, [foods, activeFilter, config]);
+
+  if (!pet) return null;
 
   const handleFeed = (foodId: string) => {
     const food = foods.find((f) => f.id === foodId);

@@ -71,6 +71,7 @@ export const PetDashboard: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('PET');
   const [showStudio, setShowStudio] = useState<boolean>(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const [speechQuote, setSpeechQuote] = useState<string>(() =>
     pet ? (ROLE_THEMES[pet.type]?.defaultGreeting || ROLE_THEMES.GOLEMY.defaultGreeting) : ROLE_THEMES.GOLEMY.defaultGreeting
   );
@@ -166,8 +167,6 @@ export const PetDashboard: React.FC = () => {
         : 'Khò khò... trẫm đi ngủ nạp năng lượng đây Zzz'
     );
   };
-
-  const [shareToast, setShareToast] = useState<string | null>(null);
 
   const handleShare = async () => {
     tg.haptic.impact('medium');

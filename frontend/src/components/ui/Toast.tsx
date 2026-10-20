@@ -32,7 +32,7 @@ export const Toast: React.FC<ToastProps> = ({
   const isReward = type === 'reward';
 
   return (
-    <div className="fixed top-4 left-0 right-0 mx-auto px-4 z-50 max-w-sm pointer-events-none animate-toast">
+    <div className="fixed top-4 left-4 right-4 mx-auto z-50 max-w-sm pointer-events-none animate-toast">
       <div
         className={`card-sticker pointer-events-auto border-2 border-[var(--ink)] shadow-[0_4px_0_var(--ink)] p-3.5 flex items-center justify-between gap-3 ${
           isWarning ? 'bg-[var(--primary-tint)]' : 'bg-[var(--mint-tint)]'
@@ -56,12 +56,12 @@ export const Toast: React.FC<ToastProps> = ({
               <CheckCircle2 className="w-5 h-5 text-white" />
             )}
           </div>
-          <div>
-            <div className="font-heading font-extrabold text-sm text-[var(--ink)] leading-snug">
+          <div className="min-w-0 flex-1">
+            <div className="font-heading font-extrabold text-xs sm:text-sm text-[var(--ink)] leading-snug break-words">
               {message}
             </div>
             {subMessage && (
-              <div className="text-xs text-[var(--ink-soft)] font-medium mt-0.5">
+              <div className="text-[11px] text-[var(--ink-soft)] font-medium mt-0.5 break-words">
                 {subMessage}
               </div>
             )}

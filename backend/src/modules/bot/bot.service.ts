@@ -30,6 +30,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
   private bot: Telegraf | null = null;
   private readonly activeTimers = new Map<number, NodeJS.Timeout>();
   private readonly chatCooldowns = new Map<number, number>();
+  private readonly checkinCache = new Map<number, string>();
 
   constructor(
     private readonly config: ConfigService,
@@ -604,22 +605,42 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       }
 
       const now = new Date();
+      // Vietnam timezone UTC+7 date key
+      const vnDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const todayKey = vnDate.toISOString().slice(0, 10);
 
-      // Check if already checked in today (same calendar day)
+      // 1. Check in-memory cache first (instant block within the same process)
+      const cachedKey = this.checkinCache.get(from.id);
+      if (cachedKey === todayKey) {
+        const [year, month, day] = todayKey.split('-').map(Number);
+        const nextMidnightVn = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0));
+        const diffMs = nextMidnightVn.getTime() - (now.getTime() + 7 * 60 * 60 * 1000);
+        const hoursLeft = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+        const minutesLeft = Math.max(0, Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)));
+
+        await ctx.reply(
+          `⏳ <b>BẠN ĐÃ ĐIỂM DANH HÔM NAY RỒI!</b>\n\n` +
+          `🎁 Mỗi ngày bạn chỉ được điểm danh nhận quà <b>1 lần duy nhất</b>.\n` +
+          `⏰ Lượt điểm danh tiếp theo sẽ mở sau <b>${hoursLeft} giờ ${minutesLeft} phút</b> nữa (00:00 sáng mai)!\n\n` +
+          `🔥 Chuỗi Streak hiện tại: <b>${user.streak} ngày liên tục</b>\n` +
+          `💡 Trong lúc chờ, hãy hoàn thành phiên Pomodoro (<code>/focus 25</code>) để cày EXP cho ${user.pet.name} nhé!`,
+          { parse_mode: 'HTML' },
+        );
+        return;
+      }
+
+      // 2. Check Database lastCheckinAt
       if (user.lastCheckinAt) {
-        const last = new Date(user.lastCheckinAt);
-        const isSameDay =
-          last.getFullYear() === now.getFullYear() &&
-          last.getMonth() === now.getMonth() &&
-          last.getDate() === now.getDate();
+        const lastVn = new Date(new Date(user.lastCheckinAt).getTime() + 7 * 60 * 60 * 1000);
+        const lastDateKey = lastVn.toISOString().slice(0, 10);
 
-        if (isSameDay) {
-          // Calculate time left until midnight reset (00:00)
-          const nextMidnight = new Date(now);
-          nextMidnight.setHours(24, 0, 0, 0);
-          const diffMs = nextMidnight.getTime() - now.getTime();
-          const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
-          const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        if (lastDateKey === todayKey) {
+          this.checkinCache.set(from.id, todayKey);
+          const [year, month, day] = todayKey.split('-').map(Number);
+          const nextMidnightVn = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0));
+          const diffMs = nextMidnightVn.getTime() - (now.getTime() + 7 * 60 * 60 * 1000);
+          const hoursLeft = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+          const minutesLeft = Math.max(0, Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)));
 
           await ctx.reply(
             `⏳ <b>BẠN ĐÃ ĐIỂM DANH HÔM NAY RỒI!</b>\n\n` +
@@ -632,6 +653,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
           return;
         }
       }
+
+      // Mark in cache immediately
+      this.checkinCache.set(from.id, todayKey);
 
       // Calculate streak
       const oneDayMs = 24 * 60 * 60 * 1000;

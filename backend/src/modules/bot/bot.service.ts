@@ -53,6 +53,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await this.bot.telegram.setMyCommands([
         { command: 'start', description: '🎮 Khởi động & Mở menu DevGotchi' },
         { command: 'pet', description: '🐾 Xem hồ sơ & chỉ số sinh lực thú cưng' },
+        { command: 'task', description: '📋 Mở Web Quản Lý Task (PSOI Task)' },
         { command: 'feed', description: '🍖 Cho thú cưng ăn nạp năng lượng' },
         { command: 'poke', description: '👋 Xoa đầu, cưng nựng bé cưng (+3 💖)' },
         { command: 'focus', description: '⏱️ Pomodoro tập trung (vd: /focus 25 Coding)' },
@@ -116,6 +117,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             `${emoji} Bé cưng <b>${pet.name}</b> (Cấp ${pet.level}) đang vẫy tay chào bạn nè!\n\n` +
             `📜 <b>DANH SÁCH LỆNH TƯƠNG TÁC NHANH:</b>\n` +
             `🐾 /pet hoặc /status : Xem chỉ số & thanh sinh lực\n` +
+            `📋 /task : Mở Web Quản Lý Task (PSOI Task)\n` +
             `🍖 /feed : Mở khay thức ăn công nghệ\n` +
             `👋 /poke : Xoa đầu, cưng nựng (+3 Hạnh phúc)\n` +
             `⏱️ /focus <code>25 [tag]</code> : Hẹn giờ Pomodoro tập trung\n` +
@@ -129,7 +131,8 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             ...Markup.inlineKeyboard([
               [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
               [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
-              [Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25'), Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
+              [Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25'), Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
+              [Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
             ]),
           });
         } else {
@@ -139,6 +142,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             `👉 <b>Bước 1:</b> Bấm nút <b>"Nuôi Pet 🐾"</b> ở góc dưới màn hình để nhận nuôi 1 trong 4 Linh Thú 3D (Dino DevOps, Mèo Lofi, Cá Nóc RAM, Bạch Tuộc Soi Bug) nhé!\n\n` +
             `📜 <b>DANH SÁCH LỆNH TƯƠNG TÁC:</b>\n` +
             `🐾 /pet : Xem hồ sơ & thanh sinh lực bé cưng\n` +
+            `📋 /task : Mở Web Quản Lý Task (PSOI Task)\n` +
             `🍖 /feed : Cho thú cưng ăn nạp năng lượng\n` +
             `👋 /poke : Xoa đầu cưng nựng (+3 Hạnh phúc)\n` +
             `⏱️ /focus <code>25 Coding</code> : Bắt đầu Pomodoro tập trung\n` +
@@ -150,6 +154,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([
               [Markup.button.callback('🎁 Điểm Danh Hàng Ngày', 'pet_checkin')],
+              [Markup.button.url('📋 Mở PSOI Task Board', 'https://psoitask.surge.sh/')],
               [Markup.button.callback('📖 Xem Trợ Giúp Lệnh', 'pet_help')],
             ]),
           });
@@ -162,6 +167,22 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     // 2. /pet or /status command
     this.bot.command(['pet', 'status'], async (ctx) => {
       await this.sendPetStatus(ctx);
+    });
+
+    // 2b. /task or /tasks command (Open PSOI Task Manager)
+    this.bot.command(['task', 'tasks'], async (ctx) => {
+      await ctx.reply(
+        `📋 <b>PSOI TASK - HỆ THỐNG QUẢN LÝ CÔNG VIỆC</b>\n\n` +
+        `Quản lý và kiểm tra danh sách nhiệm vụ, công việc của bạn tại đây:\n\n` +
+        `🔗 <b>Địa chỉ:</b> https://psoitask.surge.sh/\n\n` +
+        `<i>Bấm nút bên dưới để mở ngay trên trình duyệt:</i>`,
+        {
+          parse_mode: 'HTML',
+          ...Markup.inlineKeyboard([
+            [Markup.button.url('🚀 Mở PSOI Task Board ↗️', 'https://psoitask.surge.sh/')],
+          ]),
+        },
+      );
     });
 
     // 3. /poke command
@@ -381,6 +402,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         ...Markup.inlineKeyboard([
           [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke')],
           [Markup.button.callback('🎁 Điểm Danh Hàng Ngày', 'pet_checkin'), Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25')],
+          [Markup.button.url('📋 Mở PSOI Task Board ↗️', 'https://psoitask.surge.sh/')],
         ]),
       });
     } catch (err) {
@@ -753,6 +775,8 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       `Bot giúp bạn chăm sóc thú cưng 3D và duy trì kỷ luật tập trung làm việc mọi lúc mọi nơi:\n\n` +
       `🐾 <b>/pet</b> hoặc <b>/status</b>\n` +
       `👉 Hiển thị thẻ sinh lực thú cưng: Độ no bụng, Hạnh phúc, Năng lượng, Cấp độ, EXP và Chuỗi ngày Streak.\n\n` +
+      `📋 <b>/task</b> hoặc <b>/tasks</b>\n` +
+      `👉 Mở nhanh Web quản lý công việc cá nhân PSOI Task (https://psoitask.surge.sh/).\n\n` +
       `🍖 <b>/feed</b>\n` +
       `👉 Mở khay chọn món ăn công nghệ (Tôm Debug, Bánh Cá RAM, Thạch Docker, Donut Espresso) để hồi phục độ no và hạnh phúc.\n\n` +
       `👋 <b>/poke</b>\n` +
@@ -770,7 +794,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       parse_mode: 'HTML',
       ...Markup.inlineKeyboard([
         [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
-        [Markup.button.callback('⏱️ Thử Focus 25 phút', 'pet_focus_25')],
+        [Markup.button.callback('⏱️ Thử Focus 25 phút', 'pet_focus_25'), Markup.button.url('📋 PSOI Task ↗️', 'https://psoitask.surge.sh/')],
       ]),
     });
   }

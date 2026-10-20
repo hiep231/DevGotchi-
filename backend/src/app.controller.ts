@@ -9,4 +9,13 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('version')
+  getVersion() {
+    return {
+      version: '1.0.3',
+      features: ['daily_checkin_utc7', 'psoitask_button', 'bot_commands'],
+      deployedAt: new Date().toISOString(),
+    };
+  }
 }

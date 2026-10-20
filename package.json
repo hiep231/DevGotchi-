@@ -9,7 +9,8 @@
     "dev:backend": "npm --prefix backend run start:dev",
     "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
-    "build": "npm run build:frontend && npm run build:backend"
+    "build": "npm --prefix backend install && npm --prefix backend run build",
+    "start": "npm --prefix backend run start:prod"
   },
   "keywords": [
     "tamagotchi",

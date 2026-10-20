@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Play, Pause, RotateCcw, Clock, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Clock, Sparkles, ShieldAlert, HeartCrack, AlertTriangle } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
 import { useCompleteSessionMutation, useFoodsQuery } from '../hooks/usePetQueries';
 import { tg } from '../utils/telegram';
@@ -51,7 +51,7 @@ export const ROLE_CATEGORIES: RoleCategory[] = [
 ];
 
 export const PomodoroTimer: React.FC = () => {
-  const { pet, setMood, foods: fallbackFoods } = usePetStore();
+  const { pet, setMood, penalizeDistraction, foods: fallbackFoods } = usePetStore();
   const { data: foods = fallbackFoods } = useFoodsQuery();
   const sessionMutation = useCompleteSessionMutation();
 
@@ -62,6 +62,18 @@ export const PomodoroTimer: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [rewardToast, setRewardToast] = useState<{ exp: number; leveledUp: boolean } | null>(null);
+
+  // Strict Mode & Penalty State
+  const [isStrictMode, setIsStrictMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('devgotchi_strict_mode') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  const [warningToast, setWarningToast] = useState<string | null>(null);
+  const [penaltyModal, setPenaltyModal] = useState<{ awaySeconds: number; petQuote: string } | null>(null);
+  const leaveTimestampRef = useRef<number | null>(null);
 
   const config = pet ? STARTER_PETS.find((p) => p.id === pet.type) || STARTER_PETS[0] : null;
 
@@ -96,6 +108,74 @@ export const PomodoroTimer: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, [isRunning, timeLeft]);
+
+  // Anti-Distraction Strict Mode Tracker (detect leaving Telegram chat / minimizing app)
+  useEffect(() => {
+    if (!isRunning || mode !== 'FOCUS' || !isStrictMode) {
+      leaveTimestampRef.current = null;
+      return;
+    }
+
+    const checkVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        leaveTimestampRef.current = Date.now();
+      } else if (document.visibilityState === 'visible' && leaveTimestampRef.current) {
+        const awaySeconds = Math.round((Date.now() - leaveTimestampRef.current) / 1000);
+        leaveTimestampRef.current = null;
+
+        if (awaySeconds >= 2 && awaySeconds <= 10) {
+          // Grace period warning!
+          tg.haptic.notification('warning');
+          setWarningToast(`⚠️ Bạn vừa rời phiên ${awaySeconds}s! Mau tập trung lại kẻo bị phạt nhé!`);
+        } else if (awaySeconds > 10) {
+          // PENALTY FIRED!
+          setIsRunning(false);
+          setTimeLeft(duration);
+          penalizeDistraction(15);
+          tg.haptic.notification('error');
+
+          if (typeof window !== 'undefined') {
+            const x = window.innerWidth / 2;
+            const y = 300;
+            spawnFloatingReaction(x, y, '-15 💔 • Phạt rời app!', '#FF6B6B', '💔');
+          }
+
+          let quote = 'Sen bỏ đi xem tin nhắn khác làm hỏng phiên tập trung rồi huhu! 😢';
+          if (pet) {
+            if (pet.type === 'BYTEY') {
+              quote = 'Huhu... sen bỏ đi lướt tin nhắn làm màu sắc prototype bị lệch hết rồi! 😿';
+            } else if (pet.type === 'PUFFY') {
+              quote = 'Ôi không... sếp đi hóng drama làm cháy cả roadmap sprint rồi! 🐡';
+            } else if (pet.type === 'OCTY') {
+              quote = 'Trời ơi... sen lơ là một cái là bug tràn lan không kịp bắt! 🐙';
+            } else if (pet.type === 'GOLEMY') {
+              quote = 'Toang rồi... bỏ đi xem tin nhắn làm server crash 500 mất rồi sen ơi! 🦕';
+            }
+          }
+
+          setPenaltyModal({ awaySeconds, petQuote: quote });
+        }
+      }
+    };
+
+    const handleBlur = () => {
+      if (!leaveTimestampRef.current) leaveTimestampRef.current = Date.now();
+    };
+
+    const handleFocus = () => {
+      checkVisibility();
+    };
+
+    document.addEventListener('visibilitychange', checkVisibility);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', checkVisibility);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [isRunning, mode, isStrictMode, duration, pet, penalizeDistraction]);
 
   const handleCompleteSession = () => {
     if (mode === 'FOCUS' && pet) {
@@ -197,6 +277,59 @@ export const PomodoroTimer: React.FC = () => {
           15m Nghỉ dài
         </button>
       </div>
+
+      {/* Strict Focus Anti-Distraction Toggle Card */}
+      {mode === 'FOCUS' && (
+        <div className="card-sticker p-2.5 bg-white flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-7 h-7 rounded-xl flex items-center justify-center border-2 border-[var(--ink)] shadow-xs transition-colors shrink-0 ${
+                isStrictMode ? 'bg-[var(--coral-tint)] text-[var(--coral-deep)]' : 'bg-gray-100 text-gray-400'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="text-xs font-heading font-black text-[var(--ink)] flex items-center gap-1.5">
+                <span>Kỷ Luật Thép</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[9px] font-heading font-black ${
+                    isStrictMode ? 'bg-[var(--coral)] text-white' : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {isStrictMode ? 'BẬT' : 'TẮT'}
+                </span>
+              </span>
+              <span className="text-[10px] text-[var(--ink-soft)] font-semibold mt-0.5">
+                Phạt trừ 15 💖 nếu thoát ra xem tin nhắn Telegram (&gt;10s)
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isStrictMode}
+            onClick={() => {
+              tg.haptic.selection();
+              const next = !isStrictMode;
+              setIsStrictMode(next);
+              try {
+                localStorage.setItem('devgotchi_strict_mode', String(next));
+              } catch {}
+            }}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-[var(--ink)] transition-colors duration-200 ease-in-out focus:outline-none ${
+              isStrictMode ? 'bg-[var(--coral)]' : 'bg-[#E5E0D8]'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white border border-[var(--ink)] shadow-sm transition duration-200 ease-in-out mt-0.5 ml-0.5 ${
+                isStrictMode ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      )}
 
       {/* Multi-Role Tag Selector (Dev, QA, Design, Product, All) */}
       {mode === 'FOCUS' && (
@@ -363,6 +496,76 @@ export const PomodoroTimer: React.FC = () => {
           <RotateCcw className="w-5 h-5 text-[var(--ink)]" />
         </IconButton>
       </div>
+
+      {/* Warning Grace Period Toast */}
+      {warningToast && (
+        <Toast
+          message={warningToast}
+          type="warning"
+          isOpen={!!warningToast}
+          onClose={() => setWarningToast(null)}
+        />
+      )}
+
+      {/* 🚨 Strict Mode Penalty Modal Overlay */}
+      {penaltyModal && (
+        <div className="fixed inset-0 z-50 bg-[#1B2A4A]/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="card-sticker max-w-sm w-full bg-white p-5 flex flex-col items-center text-center space-y-3.5 shadow-2xl animate-pop-in border-3 border-[var(--coral-deep)] relative">
+            {/* Header Alarm Icon & Avatar */}
+            <div className="relative">
+              <div className="w-16 h-16 rounded-3xl bg-[var(--coral-tint)] border-2 border-[var(--coral-deep)] flex items-center justify-center shadow-md">
+                <HeartCrack className="w-8 h-8 text-[var(--coral-deep)] animate-bounce" />
+              </div>
+              <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-[var(--coral)] text-white text-[9px] font-heading font-black rounded-full border border-[var(--ink)] shadow-xs">
+                -15 💖
+              </span>
+            </div>
+
+            {/* Title & Speech */}
+            <div>
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-heading font-extrabold border border-rose-300 mb-1">
+                <AlertTriangle className="w-3 h-3 text-rose-600" />
+                <span>VI PHẠM KỶ LUẬT THÉP</span>
+              </div>
+              <h3 className="text-lg font-heading font-black text-[var(--ink)] leading-tight">
+                Phiên Tập Trung Bị Hủy!
+              </h3>
+            </div>
+
+            {/* Pet Blame Quote Bubble */}
+            <div className="p-3 bg-[var(--bg)] border-2 border-[var(--ink)] rounded-2xl text-xs font-heading font-bold text-[var(--ink)] shadow-xs">
+              "{penaltyModal.petQuote}"
+            </div>
+
+            {/* Penalty Breakdown */}
+            <div className="w-full bg-[#FFF6E5] border border-[var(--ink)]/20 rounded-xl p-2.5 text-left text-xs space-y-1">
+              <div className="flex justify-between items-center text-[var(--ink-soft)] font-semibold">
+                <span>Thời gian rời app:</span>
+                <span className="font-heading font-black text-[var(--coral-deep)]">{penaltyModal.awaySeconds} giây</span>
+              </div>
+              <div className="flex justify-between items-center text-[var(--ink-soft)] font-semibold">
+                <span>Hạn mức cho phép:</span>
+                <span className="font-heading font-black text-[var(--ink)]">10 giây</span>
+              </div>
+              <div className="flex justify-between items-center text-[var(--ink-soft)] font-semibold pt-1 border-t border-[var(--line)]">
+                <span>Hình phạt áp dụng:</span>
+                <span className="font-heading font-black text-rose-600">-15 Hạnh phúc & Chóng mặt @@</span>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <button
+              onClick={() => {
+                tg.haptic.impact('medium');
+                setPenaltyModal(null);
+              }}
+              className="btn-chunky btn-chunky-primary w-full py-2.5 text-xs flex items-center justify-center gap-1.5 shadow-[0_3px_0_var(--ink)]"
+            >
+              <span>Tôi hiểu rồi, bắt đầu lại nào! 🚀</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

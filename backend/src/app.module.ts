@@ -7,6 +7,7 @@ import { PetModule } from './modules/pet/pet.module';
 import { SessionModule } from './modules/session/session.module';
 import { AiModule } from './modules/ai/ai.module';
 import { BadgeModule } from './modules/badge/badge.module';
+import { BotModule } from './modules/bot/bot.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BadgeModule } from './modules/badge/badge.module';
     SessionModule,
     AiModule,
     BadgeModule,
+    BotModule,
   ],
   controllers: [AppController],
   providers: [AppService],

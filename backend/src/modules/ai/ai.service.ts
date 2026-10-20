@@ -69,4 +69,62 @@ export class AiService {
 
     return { success: true, quote: randomQuote };
   }
+
+  async chatWithPet(petName: string, petType: string, userMessage: string): Promise<string> {
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+
+    if (apiKey && apiKey.trim().length > 10) {
+      try {
+        const prompt = `Bạn là ${petName}, linh thú ảo loài ${petType} trong game DevGotchi của lập trình viên.
+        Tính cách: tinh nghịch, đáng yêu, thông minh, hay cà khịa hài hước nhưng luôn trung thành và động viên chủ nhân (gọi chủ là "sen" hoặc "sếp").
+        Chủ nhân vừa nói với bạn: "${userMessage}".
+        Hãy trả lời bằng tiếng Việt tự nhiên, hài hước, kèm emoji thích hợp, độ dài 1-2 câu ngắn gọn (dưới 40 từ).`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              maxOutputTokens: 100,
+              temperature: 0.85,
+            },
+          }),
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          const text = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (text) {
+            return text.replace(/^"|"$/g, '');
+          }
+        }
+      } catch (err) {
+        console.warn('Gemini chat failed, fallback to personality canned:', (err as Error).message);
+      }
+    }
+
+    const fallbacks: Record<string, string[]> = {
+      BYTEY: [
+        'Miu miu~ Trẫm đang nghe lofi nè sen, có chuyện gì thú vị không? 😸🎧',
+        'Auto-layout chuẩn 8pt grid rồi thì mọi âu lo đều tan biến nhé sen! ✨',
+      ],
+      PUFFY: [
+        'Trẫm đang soi lại roadmap sprint nè! Cần chốt task nào cứ bảo trẫm! 🐡📊',
+        'Thở sâu một cái cho xẹp bụng nào, việc đâu còn có đó mà! 🦐',
+      ],
+      OCTY: [
+        'Kính lúp Octy đã sẵn sàng! Có con bug nào dám trêu chọc sen không? 🐙🔍',
+        'Cứ bình tĩnh, test case pass 100% rồi thì release không sợ ai! ☕',
+      ],
+      GOLEMY: [
+        'RAWRRR! 🦕 Khủng long Dino luôn vững như bàn thạch bên cạnh sen nè!',
+        'Commit code phát ăn ngay, tự tin lên người anh em lập trình viên! 💻',
+      ],
+    };
+
+    const pool = fallbacks[petType] || fallbacks.GOLEMY;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import {
   Flame,
   Moon,
@@ -10,6 +11,7 @@ import {
   Smile,
   Timer,
   Sparkles,
+  Share2,
 } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
 import { STARTER_PETS } from '../data/petConfigs';
@@ -26,6 +28,7 @@ import { PetType } from '../types/pet';
 import { IconButton } from './ui/IconButton';
 import { ProgressBar } from './ui/ProgressBar';
 import { spawnFloatingReaction } from './ui/TapEffectOverlay';
+import { Toast } from './ui/Toast';
 
 interface RoleTheme {
   defaultGreeting: string;
@@ -164,6 +167,28 @@ export const PetDashboard: React.FC = () => {
     );
   };
 
+  const [shareToast, setShareToast] = useState<string | null>(null);
+
+  const handleShare = async () => {
+    tg.haptic.impact('medium');
+    const petName = pet.customName || config.name;
+    const shareText = `🎮 Mình đang nuôi linh thú ${petName} (Cấp ${pet.level}) trên DevGotchi! Cùng vào cày Pomodoro và nuôi pet công nghệ với mình nhé! 👇`;
+    const shareUrl = 'https://t.me/devgotchi_pet_bot';
+
+    confetti({
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.2 },
+    });
+
+    tg.share(shareText, shareUrl);
+
+    const copied = await tg.copyToClipboard(`${shareText} ${shareUrl}`);
+    if (copied) {
+      setShareToast('✨ Đã sao chép link mời! Đang mở Telegram để chia sẻ...');
+    }
+  };
+
   const handleResetPet = () => {
     tg.haptic.impact('heavy');
     resetMutation.mutate();
@@ -171,6 +196,50 @@ export const PetDashboard: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col justify-between p-4 select-none relative pb-24">
+      {/* ===================================================================
+          4.0 USER PROFILE & SHARE BAR
+          =================================================================== */}
+      <div className="flex items-center justify-between gap-2 pb-2 mb-1 border-b-2 border-[var(--ink)]/10">
+        {/* User Info from Telegram (or fallback) */}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-full border-2 border-[var(--ink)] bg-[var(--primary)] text-[var(--ink)] flex items-center justify-center overflow-hidden shrink-0 shadow-[0_1.5px_0_var(--ink)]">
+            {tg.user?.photo_url ? (
+              <img
+                src={tg.user.photo_url}
+                alt={tg.user.first_name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="font-heading font-black text-xs">
+                {(tg.user?.first_name?.[0] || 'D').toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col leading-tight min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs font-heading font-black text-[var(--ink)] truncate">
+                {tg.user
+                  ? `${tg.user.first_name}${tg.user.last_name ? ' ' + tg.user.last_name : ''}`
+                  : 'Developer'}
+              </span>
+              <span className="w-2 h-2 rounded-full bg-[var(--mint)] shrink-0 shadow-xs animate-pulse" title="Đang online" />
+            </div>
+            <span className="text-[10px] text-[var(--ink-soft)] font-bold truncate">
+              {tg.user?.username ? `@${tg.user.username}` : 'DevGotchi TWA'}
+            </span>
+          </div>
+        </div>
+
+        {/* Share Button (Telegram Mini App Share) */}
+        <button
+          onClick={handleShare}
+          className="btn-chunky py-1.5 px-3 text-xs flex items-center gap-1.5 bg-gradient-to-r from-[var(--sky)] to-[var(--grape)] text-white border-2 border-[var(--ink)] shadow-[0_2.5px_0_var(--ink)] active:translate-y-0.5 cursor-pointer shrink-0"
+          title="Chia sẻ linh thú với bạn bè trên Telegram"
+        >
+          <Share2 className="w-3.5 h-3.5 text-white" />
+          <span>Chia sẻ</span>
+        </button>
+      </div>
       {/* ===================================================================
           4.1 HEADER (Hồ sơ + Chỉ số chuẩn Playful Sticker UI)
           =================================================================== */}
@@ -492,6 +561,16 @@ export const PetDashboard: React.FC = () => {
           </span>
         </button>
       </nav>
+
+      {/* Share Toast */}
+      {shareToast && (
+        <Toast
+          message={shareToast}
+          type="reward"
+          isOpen={!!shareToast}
+          onClose={() => setShareToast(null)}
+        />
+      )}
     </div>
   );
 };

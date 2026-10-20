@@ -21,6 +21,7 @@ interface PetStore {
   setMood: (mood: PetMood) => void;
   toggleSleep: () => void;
   completeFocusSession: (minutes: number, tag?: string) => { expGained: number; leveledUp: boolean };
+  penalizeDistraction: (penaltyHappiness?: number) => void;
   resetPet: () => void;
   endFeedingAnim: () => void;
 }
@@ -255,6 +256,19 @@ export const usePetStore = create<PetStore>((set, get) => ({
     set({ pet: updatedPet, foods: updatedFoods });
 
     return { expGained, leveledUp };
+  },
+
+  penalizeDistraction: (penaltyHappiness: number = 15) => {
+    const { pet } = get();
+    if (!pet) return;
+    const newHappiness = Math.max(0, pet.happiness - penaltyHappiness);
+    const updatedPet: PetState = {
+      ...pet,
+      happiness: newHappiness,
+      mood: 'DIZZY',
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPet));
+    set({ pet: updatedPet });
   },
 
   resetPet: () => {

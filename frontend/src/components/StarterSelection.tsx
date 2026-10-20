@@ -46,7 +46,7 @@ export const StarterSelection: React.FC = () => {
           <span>DevGotchi • Telegram Mini App</span>
         </div>
         <h1 className="text-2xl font-heading font-black text-[var(--ink)] tracking-tight">
-          Chọn Thú Cưng Khởi Đầu
+          {tg.user?.first_name ? `Chào ${tg.user.first_name}, Chọn Thú Cưng Nhé!` : 'Chọn Thú Cưng Khởi Đầu'}
         </h1>
         <p className="text-[var(--ink-soft)] text-xs max-w-xs mx-auto font-medium">
           Linh thú 3D đồng hành, cùng bạn hoàn thành từng phiên code mỗi ngày!

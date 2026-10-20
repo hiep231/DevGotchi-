@@ -17,8 +17,11 @@ declare global {
             last_name?: string;
             username?: string;
             language_code?: string;
+            photo_url?: string;
           };
         };
+        openTelegramLink?: (url: string) => void;
+        openLink?: (url: string) => void;
         themeParams?: {
           bg_color?: string;
           text_color?: string;
@@ -96,5 +99,26 @@ export const tg = {
         // Safe no-op
       }
     },
+  },
+
+  share(text: string, url: string = 'https://t.me/devgotchi_pet_bot') {
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    if (this.webApp?.openTelegramLink) {
+      this.webApp.openTelegramLink(shareUrl);
+    } else if (typeof window !== 'undefined') {
+      window.open(shareUrl, '_blank');
+    }
+  },
+
+  async copyToClipboard(text: string): Promise<boolean> {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      // Fallback
+    }
+    return false;
   },
 };

@@ -53,8 +53,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await this.bot.telegram.setMyCommands([
         { command: 'start', description: '🎮 Khởi động & Mở menu DevGotchi' },
         { command: 'pet', description: '🐾 Xem hồ sơ & chỉ số sinh lực thú cưng' },
+        { command: 'sleep', description: '💤 Cho thú cưng đi ngủ sạc đầy Năng lượng (100% ⚡)' },
         { command: 'task', description: '📋 Mở Web Quản Lý Task (PSOI Task)' },
-        { command: 'feed', description: '🍖 Cho thú cưng ăn nạp năng lượng' },
+        { command: 'feed', description: '🍖 Cho thú cưng ăn nạp no bụng' },
         { command: 'poke', description: '👋 Xoa đầu, cưng nựng bé cưng (+3 💖)' },
         { command: 'focus', description: '⏱️ Pomodoro tập trung (vd: /focus 25 Coding)' },
         { command: 'checkin', description: '🎁 Điểm danh nhận EXP hàng ngày' },
@@ -117,6 +118,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             `${emoji} Bé cưng <b>${pet.name}</b> (Cấp ${pet.level}) đang vẫy tay chào bạn nè!\n\n` +
             `📜 <b>DANH SÁCH LỆNH TƯƠNG TÁC NHANH:</b>\n` +
             `🐾 /pet hoặc /status : Xem chỉ số & thanh sinh lực\n` +
+            `💤 /sleep : Cho bé đi ngủ sạc đầy Năng lượng (100% ⚡)\n` +
             `📋 /task : Mở Web Quản Lý Task (PSOI Task)\n` +
             `🍖 /feed : Mở khay thức ăn công nghệ\n` +
             `👋 /poke : Xoa đầu, cưng nựng (+3 Hạnh phúc)\n` +
@@ -130,9 +132,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([
               [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
-              [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
-              [Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25'), Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
-              [Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
+              [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep')],
+              [Markup.button.callback('🎁 Điểm Danh', 'pet_checkin'), Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25')],
+              [Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/'), Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
             ]),
           });
         } else {
@@ -185,6 +187,11 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       );
     });
 
+    // 2c. /sleep or /rest command (Restore 100% Energy)
+    this.bot.command(['sleep', 'rest'], async (ctx) => {
+      await this.handleSleep(ctx);
+    });
+
     // 3. /poke command
     this.bot.command('poke', async (ctx) => {
       await this.handlePoke(ctx);
@@ -232,6 +239,11 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     this.bot.action('pet_checkin', async (ctx) => {
       await ctx.answerCbQuery();
       await this.handleCheckin(ctx);
+    });
+
+    this.bot.action('pet_sleep', async (ctx) => {
+      await ctx.answerCbQuery('💤 Đang cho bé đi ngủ...');
+      await this.handleSleep(ctx);
     });
 
     this.bot.action('pet_help', async (ctx) => {
@@ -401,12 +413,57 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
           [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke')],
-          [Markup.button.callback('🎁 Điểm Danh Hàng Ngày', 'pet_checkin'), Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25')],
-          [Markup.button.url('📋 Mở PSOI Task Board ↗️', 'https://psoitask.surge.sh/')],
+          [Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
+          [Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25'), Markup.button.url('📋 Mở PSOI Task Board ↗️', 'https://psoitask.surge.sh/')],
         ]),
       });
     } catch (err) {
       this.logger.error('sendPetStatus error:', (err as Error).message);
+    }
+  }
+
+  // Sub-handler: Sleep & Rest Pet to restore 100% Energy
+  private async handleSleep(ctx: any) {
+    try {
+      const from = ctx.from;
+      if (!from) return;
+
+      const user = await this.prisma.user.findUnique({
+        where: { telegramId: BigInt(from.id) },
+        include: { pet: true },
+      });
+
+      if (!user?.pet) {
+        await ctx.reply('🐾 Bạn chưa nhận nuôi linh thú nào! Hãy gõ /start để nhận nuôi bé nhé.');
+        return;
+      }
+
+      await this.prisma.pet.update({
+        where: { id: user.pet.id },
+        data: {
+          energy: 100,
+          happiness: Math.min(100, user.pet.happiness + 5),
+          mood: 'SLEEPING',
+          isSleeping: true,
+        },
+      });
+
+      const emoji = PET_EMOJIS[user.pet.type] || '🐾';
+      await ctx.reply(
+        `💤 <b>KHÒ KHÒ... BÉ ĐÃ ĐƯỢC ĐI NGỦ NGHỈ NGƠI!</b> 🌙\n\n` +
+        `${emoji} Bé cưng <b>${user.pet.name}</b> đang cuộn tròn ngủ say sưa...\n` +
+        `⚡ Năng lượng: <b>100/100</b> (Đã sạc đầy 100% pin 🔋)\n` +
+        `💖 Hạnh phúc: <b>${Math.min(100, user.pet.happiness + 5)}/100</b>\n\n` +
+        `💬 <i>"Oáp~ Ngủ một giấc sảng khoái quá sen ơi! Năng lượng tràn trề, sẵn sàng chiến tiếp thôi nào!"</i> 🚀`,
+        {
+          parse_mode: 'HTML',
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback('🐾 Xem Trạng Thái', 'pet_status'), Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25')],
+          ]),
+        },
+      );
+    } catch (err) {
+      this.logger.error('handleSleep error:', (err as Error).message);
     }
   }
 
@@ -575,9 +632,11 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      // 3. Decrement inventory and boost hunger
+      // 3. Decrement inventory and boost hunger & energy
       const newHunger = Math.min(100, user.pet.hunger + 25);
       const newHappy = Math.min(100, user.pet.happiness + 10);
+      const energyGain = foodId === 'coffee_donut' ? 25 : (foodId === 'fish_ram' ? 15 : 10);
+      const newEnergy = Math.min(100, user.pet.energy + energyGain);
 
       await this.prisma.$transaction([
         this.prisma.inventoryItem.update({
@@ -589,6 +648,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
           data: {
             hunger: newHunger,
             happiness: newHappy,
+            energy: newEnergy,
             lastFedAt: new Date(),
           },
         }),
@@ -600,9 +660,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await ctx.reply(
         `${emoji} <b>${user.pet.name} đã được ăn no nê!</b>\n` +
         `🍖 No bụng: <b>${newHunger}/100</b> (+25)\n` +
+        `⚡ Năng lượng: <b>${newEnergy}/100</b> (+${energyGain})\n` +
         `💖 Hạnh phúc: <b>${newHappy}/100</b> (+10)\n` +
         `📦 Còn lại trong túi: <b>${item.count - 1} phần</b>\n` +
-        `💬 <i>"Cảm ơn sen nhé, no bụng rồi chiến tiếp thôi nào!"</i>`,
+        `💬 <i>"Cảm ơn sen nhé, no bụng và đầy năng lượng rồi chiến tiếp thôi nào!"</i>`,
         { parse_mode: 'HTML' },
       );
     } catch (err) {
@@ -725,6 +786,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             exp: newExp,
             level: newLevel,
             maxExp: newMax,
+            energy: 100, // Daily reset restores full energy
           },
         }),
         this.prisma.inventoryItem.upsert({
@@ -775,6 +837,8 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       `Bot giúp bạn chăm sóc thú cưng 3D và duy trì kỷ luật tập trung làm việc mọi lúc mọi nơi:\n\n` +
       `🐾 <b>/pet</b> hoặc <b>/status</b>\n` +
       `👉 Hiển thị thẻ sinh lực thú cưng: Độ no bụng, Hạnh phúc, Năng lượng, Cấp độ, EXP và Chuỗi ngày Streak.\n\n` +
+      `💤 <b>/sleep</b> hoặc <b>/rest</b>\n` +
+      `👉 Cho thú cưng chợp mắt đi ngủ nghỉ ngơi để sạc đầy 100% thanh Năng lượng (⚡).\n\n` +
       `📋 <b>/task</b> hoặc <b>/tasks</b>\n` +
       `👉 Mở nhanh Web quản lý công việc cá nhân PSOI Task (https://psoitask.surge.sh/).\n\n` +
       `🍖 <b>/feed</b>\n` +
@@ -876,6 +940,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
               maxExp: newMax,
               totalFocusMinutes: user.pet.totalFocusMinutes + minutes,
               happiness: Math.min(100, user.pet.happiness + 10),
+              energy: Math.min(100, user.pet.energy + 15),
             },
           });
 
@@ -891,7 +956,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
           await ctx.reply(
             `🔔 <b>DING DING DING! HẾT GIỜ RỒI!</b> 🎉\n\n` +
             `🏆 Chúc mừng bạn đã hoàn thành <b>${minutes} phút Deep Work (#${tag})</b> xuất sắc!\n` +
-            `⭐ Thưởng: <b>+${expGained} EXP</b> và <b>+10 Điểm Hạnh Phúc</b> cho ${petName}!\n` +
+            `⭐ Thưởng: <b>+${expGained} EXP</b>, <b>+10 Điểm Hạnh Phúc</b> và <b>+15 Điểm Năng Lượng ⚡</b> cho ${petName}!\n` +
             `${leveledUp ? `👑 <b>ĐẲNG CẤP: ${petName} ĐÃ THĂNG LÊN CẤP ${newLevel}!</b> 👑\n` : ''}` +
             `Hãy đứng dậy vươn vai, uống một ngụm nước và nghỉ ngơi 5 phút nhé! ☕`,
             { parse_mode: 'HTML' },

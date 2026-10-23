@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdoptPetDto, PetTypeEnum } from './dto/adopt-pet.dto';
 import { FeedPetDto } from './dto/feed-pet.dto';
+import { calculatePetDecay } from './pet-decay.util';
 
 const FAVORITE_FOOD_MAP: Record<PetTypeEnum, string> = {
   [PetTypeEnum.PUFFY]: 'shrimp',
@@ -33,6 +34,20 @@ export class PetService {
       });
 
       if (user?.pet) {
+        const decay = calculatePetDecay(user.pet);
+        if (decay.hasDecayed) {
+          const updatedPet = await this.prisma.pet.update({
+            where: { id: user.pet.id },
+            data: {
+              hunger: decay.decayedHunger,
+              happiness: decay.decayedHappiness,
+              energy: decay.decayedEnergy,
+              mood: decay.newMood as any,
+              lastFedAt: decay.newLastFedAt,
+            },
+          });
+          return { success: true, data: updatedPet };
+        }
         return { success: true, data: user.pet };
       }
     } catch (err) {

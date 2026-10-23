@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Telegraf, Markup } from 'telegraf';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { calculatePetDecay } from '../pet/pet-decay.util';
 
 const PET_SPECIES_NAMES: Record<string, string> = {
   PUFFY: 'Cá Nóc Trí Thức',
@@ -346,10 +347,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         // Sanitize and limit length
         const cleanText = text.slice(0, 250);
 
-        const user = await this.prisma.user.findUnique({
-          where: { telegramId: BigInt(from.id) },
-          include: { pet: true },
-        });
+        const user = await this.getActiveUserWithPet(from.id);
 
         const pet = user?.pet;
         const petName = pet?.name || 'DevGotchi';
@@ -367,16 +365,39 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  // Helper to fetch user with pet and apply real-time vitals decay
+  private async getActiveUserWithPet(telegramId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: BigInt(telegramId) },
+      include: { pet: true, inventory: true },
+    });
+
+    if (user?.pet) {
+      const decay = calculatePetDecay(user.pet);
+      if (decay.hasDecayed) {
+        user.pet = await this.prisma.pet.update({
+          where: { id: user.pet.id },
+          data: {
+            hunger: decay.decayedHunger,
+            happiness: decay.decayedHappiness,
+            energy: decay.decayedEnergy,
+            mood: decay.newMood as any,
+            lastFedAt: decay.newLastFedAt,
+          },
+        });
+      }
+    }
+
+    return user;
+  }
+
   // Sub-handler: Send Pet Status Card
   private async sendPetStatus(ctx: any) {
     try {
       const from = ctx.from;
       if (!from) return;
 
-      const user = await this.prisma.user.findUnique({
-        where: { telegramId: BigInt(from.id) },
-        include: { pet: true },
-      });
+      const user = await this.getActiveUserWithPet(from.id);
 
       if (!user?.pet) {
         await ctx.reply(
@@ -399,6 +420,13 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const emoji = PET_EMOJIS[p.type] || '🐾';
       const species = PET_SPECIES_NAMES[p.type] || p.type;
 
+      const hungerWarning =
+        p.hunger <= 25
+          ? `\n\n⚠️ <b>CẢNH BÁO:</b> Bụng ${p.name} đang đói cồn cào (${p.hunger}/100 🍖)! Hãy gõ <code>/feed</code> cho bé ăn ngay nhé sen!`
+          : p.hunger <= 50
+          ? `\n\n💡 <i>Bụng ${p.name} đang hơi đói (${p.hunger}/100 🍖), hãy nhớ cho bé ăn nhé!</i>`
+          : '';
+
       const msg =
         `${emoji} <b>HỒ SƠ LINH THÚ: ${p.name.toUpperCase()}</b>\n` +
         `🏷️ Loài: <b>${species}</b> • Cấp: <b>Lv.${p.level}</b>\n` +
@@ -407,7 +435,8 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         `🍖 No bụng:     <b>${p.hunger}/100</b>\n${renderProgressBar(p.hunger)}\n\n` +
         `⚡ Năng lượng:  <b>${p.energy}/100</b>\n${renderProgressBar(p.energy)}\n\n` +
         `⭐ EXP: <b>${p.exp}/${p.maxExp}</b> • 🔥 Streak: <b>${user.streak} ngày</b>\n` +
-        `⏱️ Tổng thời gian tập trung: <b>${p.totalFocusMinutes} phút</b>`;
+        `⏱️ Tổng thời gian tập trung: <b>${p.totalFocusMinutes} phút</b>` +
+        hungerWarning;
 
       await ctx.reply(msg, {
         parse_mode: 'HTML',
@@ -428,10 +457,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const from = ctx.from;
       if (!from) return;
 
-      const user = await this.prisma.user.findUnique({
-        where: { telegramId: BigInt(from.id) },
-        include: { pet: true },
-      });
+      const user = await this.getActiveUserWithPet(from.id);
 
       if (!user?.pet) {
         await ctx.reply('🐾 Bạn chưa nhận nuôi linh thú nào! Hãy gõ /start để nhận nuôi bé nhé.');
@@ -473,10 +499,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const from = ctx.from;
       if (!from) return;
 
-      const user = await this.prisma.user.findUnique({
-        where: { telegramId: BigInt(from.id) },
-        include: { pet: true },
-      });
+      const user = await this.getActiveUserWithPet(from.id);
 
       if (!user?.pet) {
         await ctx.reply('🐾 Bạn chưa nhận nuôi linh thú nào! Hãy bấm "Nuôi Pet 🐾" ở góc dưới nhé.');
@@ -548,10 +571,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const from = ctx.from;
       if (!from) return;
 
-      const user = await this.prisma.user.findUnique({
-        where: { telegramId: BigInt(from.id) },
-        include: { pet: true, inventory: true },
-      });
+      const user = await this.getActiveUserWithPet(from.id);
 
       if (!user?.pet) {
         await ctx.reply('🐾 Bạn chưa nhận nuôi linh thú nào! Hãy bấm "Nuôi Pet 🐾" ở góc dưới nhé.');
@@ -601,10 +621,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const from = ctx.from;
       if (!from) return;
 
-      const user = await this.prisma.user.findUnique({
-        where: { telegramId: BigInt(from.id) },
-        include: { pet: true, inventory: true },
-      });
+      const user = await this.getActiveUserWithPet(from.id);
 
       if (!user?.pet) return;
 
@@ -891,10 +908,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     const from = ctx.from;
     if (!from) return;
 
-    const user = await this.prisma.user.findUnique({
-      where: { telegramId: BigInt(from.id) },
-      include: { pet: true },
-    });
+    const user = await this.getActiveUserWithPet(from.id);
 
     const petName = user?.pet?.name || 'Linh thú';
     const petType = user?.pet?.type || 'GOLEMY';

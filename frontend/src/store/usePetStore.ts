@@ -41,7 +41,23 @@ export const getFoodStorageKey = (): string => {
 const getInitialPet = (): PetState | null => {
   try {
     const saved = localStorage.getItem(getStorageKey());
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    const pet: PetState = JSON.parse(saved);
+
+    // Calculate real-time hunger decay (5 points per 2 hours)
+    if (pet.lastFedAt) {
+      const diffHours = (Date.now() - new Date(pet.lastFedAt).getTime()) / (1000 * 60 * 60);
+      const intervals = Math.floor(diffHours / 2);
+      if (intervals > 0) {
+        pet.hunger = Math.max(0, pet.hunger - intervals * 5);
+        if (pet.hunger <= 25) {
+          pet.mood = 'HUNGRY';
+        }
+        pet.lastFedAt = new Date(new Date(pet.lastFedAt).getTime() + intervals * 2 * 60 * 60 * 1000).toISOString();
+        localStorage.setItem(getStorageKey(), JSON.stringify(pet));
+      }
+    }
+    return pet;
   } catch {
     return null;
   }

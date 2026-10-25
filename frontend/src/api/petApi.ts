@@ -40,10 +40,14 @@ export const petApi = {
   // Fetch food inventory
   async getFoods(): Promise<FoodItem[]> {
     try {
-      const res = await fetch('/api/foods');
+      const res = await fetch(`/api/foods${getTelegramIdParam()}`);
       if (res.ok) {
         const json = await res.json();
-        return json.data || json;
+        if (json.data) {
+          localStorage.setItem(getFoodStorageKey(), JSON.stringify(json.data));
+          return json.data;
+        }
+        return json;
       }
     } catch {
       // Offline fallback

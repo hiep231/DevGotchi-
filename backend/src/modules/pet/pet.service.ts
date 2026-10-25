@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdoptPetDto, PetTypeEnum } from './dto/adopt-pet.dto';
 import { FeedPetDto } from './dto/feed-pet.dto';
@@ -11,12 +11,128 @@ const FAVORITE_FOOD_MAP: Record<PetTypeEnum, string> = {
   [PetTypeEnum.OCTY]: 'coffee_donut',
 };
 
-const FOOD_NUTRITION: Record<string, { hunger: number; happiness: number }> = {
-  shrimp: { hunger: 30, happiness: 15 },
-  fish_ram: { hunger: 25, happiness: 20 },
-  docker_jelly: { hunger: 35, happiness: 10 },
-  coffee_donut: { hunger: 20, happiness: 25 },
-};
+export const ALL_FOODS_META = [
+  {
+    id: 'shrimp',
+    name: 'Tôm Debug',
+    icon: '🦐',
+    color: 'from-orange-400 to-rose-500',
+    hungerRestored: 30,
+    happinessBonus: 15,
+    energyBonus: 10,
+    description: 'Khoái khẩu của Puffy, vừa béo vừa giòn giúp tiêu hóa hết bug!',
+  },
+  {
+    id: 'fish_ram',
+    name: 'Bánh Cá RAM',
+    icon: '🐟',
+    color: 'from-blue-400 to-cyan-500',
+    hungerRestored: 25,
+    happinessBonus: 20,
+    energyBonus: 15,
+    description: 'Giòn rụm vị silicon, nạp đầy bộ nhớ tức thì cho Bytey.',
+  },
+  {
+    id: 'docker_jelly',
+    name: 'Thạch Docker',
+    icon: '🧊',
+    color: 'from-emerald-400 to-teal-500',
+    hungerRestored: 35,
+    happinessBonus: 10,
+    energyBonus: 10,
+    description: 'Mát lạnh, đóng gói nguyên vẹn dinh dưỡng cho Dino.',
+  },
+  {
+    id: 'coffee_donut',
+    name: 'Donut Espresso',
+    icon: '🍩',
+    color: 'from-amber-400 to-amber-700',
+    hungerRestored: 20,
+    happinessBonus: 25,
+    energyBonus: 25,
+    description: 'Nạp caffeine cực mạnh kéo mood tỉnh táo cho Octy.',
+  },
+  {
+    id: 'bao',
+    name: 'Bánh Bao Bug',
+    icon: '🥟',
+    color: 'from-yellow-300 to-amber-500',
+    hungerRestored: 25,
+    happinessBonus: 15,
+    energyBonus: 10,
+    description: 'Bánh bao nóng hổi, nhân thịt đầy đặn xua tan mọi bug logic.',
+  },
+  {
+    id: 'noodle_cup',
+    name: 'Mì Ly Coder',
+    icon: '🍜',
+    color: 'from-red-400 to-orange-500',
+    hungerRestored: 30,
+    happinessBonus: 15,
+    energyBonus: 15,
+    description: 'Món ăn cứu cánh cho những đêm thức trắng fix deadline.',
+  },
+  {
+    id: 'bubble_tea',
+    name: 'Trà Sữa Full Thạch',
+    icon: '🧋',
+    color: 'from-purple-400 to-pink-500',
+    hungerRestored: 15,
+    happinessBonus: 30,
+    energyBonus: 10,
+    description: 'Ngọt ngào béo ngậy, nạp dopamine cho buổi chiều uể oải.',
+  },
+  {
+    id: 'onigiri',
+    name: 'Cơm Nắm Git',
+    icon: '🍙',
+    color: 'from-emerald-300 to-green-600',
+    hungerRestored: 20,
+    happinessBonus: 15,
+    energyBonus: 15,
+    description: 'Gói gọn tinh hoa, commit chắc chắn từng hạt cơm dẻo.',
+  },
+  {
+    id: 'ice_cream',
+    name: 'Kem Ốc Quế CSS',
+    icon: '🍦',
+    color: 'from-pink-300 to-rose-400',
+    hungerRestored: 15,
+    happinessBonus: 25,
+    energyBonus: 10,
+    description: 'Mát lạnh ngọt lịm, giải nhiệt tức thì sau khi vật lộn với flexbox.',
+  },
+  {
+    id: 'pizza',
+    name: 'Pizza Deadline',
+    icon: '🍕',
+    color: 'from-amber-500 to-red-600',
+    hungerRestored: 35,
+    happinessBonus: 20,
+    energyBonus: 15,
+    description: 'Một lát pizza phô mai kéo sợi tiếp sức cho cả sprint.',
+  },
+  {
+    id: 'banh_mi',
+    name: 'Bánh Mì Sài Gòn',
+    icon: '🥖',
+    color: 'from-yellow-500 to-orange-600',
+    hungerRestored: 30,
+    happinessBonus: 20,
+    energyBonus: 15,
+    description: 'Giòn rụm đậm đà, đặc sản tiếp lửa cho dev Việt.',
+  },
+  {
+    id: 'golden_apple',
+    name: 'Táo Vàng Hackathon',
+    icon: '🍎',
+    color: 'from-yellow-300 to-amber-400',
+    hungerRestored: 40,
+    happinessBonus: 40,
+    energyBonus: 30,
+    description: 'Vật phẩm huyền thoại! Hồi phục toàn bộ sinh lực và may mắn.',
+  },
+];
 
 @Injectable()
 export class PetService {
@@ -56,6 +172,46 @@ export class PetService {
 
     // New user with no pet yet -> always return null
     return { success: true, data: null };
+  }
+
+  async getFoods(telegramId?: number) {
+    const tid = telegramId ? BigInt(telegramId) : BigInt(123456);
+
+    try {
+      const user = await this.prisma.user.upsert({
+        where: { telegramId: tid },
+        create: { telegramId: tid, username: `user_${tid}` },
+        update: {},
+        include: { inventory: true },
+      });
+
+      // Ensure starter pack items exist (3 of each starter item)
+      const starterKeys = ['shrimp', 'fish_ram', 'docker_jelly', 'coffee_donut'];
+      for (const key of starterKeys) {
+        if (!user.inventory.some((i) => i.foodId === key)) {
+          await this.prisma.inventoryItem.create({
+            data: { userId: user.id, foodId: key, count: 3 },
+          }).catch(() => {});
+        }
+      }
+
+      // Re-fetch inventory
+      const inventory = await this.prisma.inventoryItem.findMany({
+        where: { userId: user.id },
+      });
+
+      const countMap = new Map(inventory.map((item) => [item.foodId, item.count]));
+
+      const result = ALL_FOODS_META.map((meta) => ({
+        ...meta,
+        count: countMap.get(meta.id) ?? 0,
+      }));
+
+      return { success: true, data: result };
+    } catch (err) {
+      console.error('getFoods error:', err);
+      return { success: true, data: ALL_FOODS_META.map((f) => ({ ...f, count: 0 })) };
+    }
   }
 
   async adoptPet(dto: AdoptPetDto, telegramId?: number) {
@@ -103,35 +259,60 @@ export class PetService {
 
     const user = await this.prisma.user.findUnique({
       where: { telegramId: tid },
-      include: { pet: true },
+      include: { pet: true, inventory: true },
     });
 
     if (!user?.pet) {
-      throw new NotFoundException('No pet found to feed. Please adopt a pet first.');
+      throw new NotFoundException('Chưa tìm thấy thú cưng! Hãy nhận nuôi trước nhé.');
     }
 
     const pet = user.pet;
-    const nutrition = FOOD_NUTRITION[dto.foodId] || { hunger: 20, happiness: 10 };
+
+    // 1. Check if pet is full
+    if (pet.hunger >= 100) {
+      throw new BadRequestException('Bé cưng đã no căng bụng rồi (100/100 🍖)! Không nên ép bé ăn thêm nhé.');
+    }
+
+    // 2. Check inventory item count
+    const item = user.inventory.find((i) => i.foodId === dto.foodId);
+    if (!item || item.count <= 0) {
+      throw new BadRequestException('Món ăn này trong túi đồ của bạn đã hết!');
+    }
+
+    const foodMeta = ALL_FOODS_META.find((f) => f.id === dto.foodId);
+    const hungerRestored = foodMeta?.hungerRestored ?? 25;
+    const happinessBonus = foodMeta?.happinessBonus ?? 15;
+    const energyBonus = foodMeta?.energyBonus ?? 10;
+
     const isFav = FAVORITE_FOOD_MAP[pet.type] === dto.foodId;
+    const hungerGain = isFav ? hungerRestored + 15 : hungerRestored;
+    const happyGain = isFav ? happinessBonus + 15 : happinessBonus;
 
-    const hungerBoost = isFav ? nutrition.hunger + 15 : nutrition.hunger;
-    const happyBoost = isFav ? nutrition.happiness + 15 : nutrition.happiness;
+    const newHunger = Math.min(100, pet.hunger + hungerGain);
+    const newHappy = Math.min(100, pet.happiness + happyGain);
+    const newEnergy = Math.min(100, pet.energy + energyBonus);
 
-    const newHunger = Math.min(100, pet.hunger + hungerBoost);
-    const newHappy = Math.min(100, pet.happiness + happyBoost);
-
-    const updated = await this.prisma.pet.update({
-      where: { id: pet.id },
-      data: {
-        hunger: newHunger,
-        happiness: newHappy,
-        lastFedAt: new Date(),
-      },
-    });
+    const [updatedItem, updatedPet] = await this.prisma.$transaction([
+      this.prisma.inventoryItem.update({
+        where: { id: item.id },
+        data: { count: item.count - 1 },
+      }),
+      this.prisma.pet.update({
+        where: { id: pet.id },
+        data: {
+          hunger: newHunger,
+          happiness: newHappy,
+          energy: newEnergy,
+          mood: newHunger > 25 && pet.mood === 'HUNGRY' ? 'HAPPY' : pet.mood,
+          lastFedAt: new Date(),
+        },
+      }),
+    ]);
 
     return {
       success: true,
-      data: updated,
+      data: updatedPet,
+      remainingCount: updatedItem.count,
       message: isFav ? 'Khoái khẩu! Thưởng thêm 15 điểm no & vui vẻ!' : 'Bé pet đã được ăn no!',
     };
   }
@@ -143,13 +324,17 @@ export class PetService {
           where: { telegramId: BigInt(telegramId) },
           include: { pet: true },
         });
+
         if (user?.pet) {
-          await this.prisma.pet.delete({ where: { id: user.pet.id } });
+          await this.prisma.pet.delete({
+            where: { id: user.pet.id },
+          });
         }
       } catch (err) {
         console.error('resetPet error:', err);
       }
     }
+
     return { success: true, message: 'Pet reset successfully' };
   }
 }

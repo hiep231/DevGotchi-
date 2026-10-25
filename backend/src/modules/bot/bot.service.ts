@@ -54,9 +54,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await this.bot.telegram.setMyCommands([
         { command: 'start', description: '🎮 Khởi động & Mở menu DevGotchi' },
         { command: 'pet', description: '🐾 Xem hồ sơ & chỉ số sinh lực thú cưng' },
+        { command: 'bag', description: '🎒 Xem túi đồ & kho thức ăn sẵn có' },
+        { command: 'feed', description: '🍖 Cho thú cưng ăn nạp no bụng' },
         { command: 'sleep', description: '💤 Cho thú cưng đi ngủ sạc đầy Năng lượng (100% ⚡)' },
         { command: 'task', description: '📋 Mở Web Quản Lý Task (PSOI Task)' },
-        { command: 'feed', description: '🍖 Cho thú cưng ăn nạp no bụng' },
         { command: 'poke', description: '👋 Xoa đầu, cưng nựng bé cưng (+3 💖)' },
         { command: 'focus', description: '⏱️ Pomodoro tập trung (vd: /focus 25 Coding)' },
         { command: 'checkin', description: '🎁 Điểm danh nhận EXP hàng ngày' },
@@ -119,9 +120,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             `${emoji} Bé cưng <b>${pet.name}</b> (Cấp ${pet.level}) đang vẫy tay chào bạn nè!\n\n` +
             `📜 <b>DANH SÁCH LỆNH TƯƠNG TÁC NHANH:</b>\n` +
             `🐾 /pet hoặc /status : Xem chỉ số & thanh sinh lực\n` +
+            `🎒 /bag : Xem túi đồ & kho thức ăn sẵn có\n` +
+            `🍖 /feed : Mở khay thức ăn công nghệ\n` +
             `💤 /sleep : Cho bé đi ngủ sạc đầy Năng lượng (100% ⚡)\n` +
             `📋 /task : Mở Web Quản Lý Task (PSOI Task)\n` +
-            `🍖 /feed : Mở khay thức ăn công nghệ\n` +
             `👋 /poke : Xoa đầu, cưng nựng (+3 Hạnh phúc)\n` +
             `⏱️ /focus <code>25 [tag]</code> : Hẹn giờ Pomodoro tập trung\n` +
             `🎁 /checkin : Điểm danh hàng ngày nhận EXP & quà\n` +
@@ -133,7 +135,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([
               [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
-              [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep')],
+              [Markup.button.callback('🎒 Túi Đồ', 'pet_bag'), Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep')],
               [Markup.button.callback('🎁 Điểm Danh', 'pet_checkin'), Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25')],
               [Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/'), Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
             ]),
@@ -193,6 +195,11 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await this.handleSleep(ctx);
     });
 
+    // 2d. /bag or /inventory command (View Food Bag)
+    this.bot.command(['bag', 'inventory'], async (ctx) => {
+      await this.handleInventory(ctx);
+    });
+
     // 3. /poke command
     this.bot.command('poke', async (ctx) => {
       await this.handlePoke(ctx);
@@ -235,6 +242,11 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     this.bot.action('pet_feed', async (ctx) => {
       await ctx.answerCbQuery();
       await this.handleFeed(ctx);
+    });
+
+    this.bot.action('pet_bag', async (ctx) => {
+      await ctx.answerCbQuery();
+      await this.handleInventory(ctx);
     });
 
     this.bot.action('pet_checkin', async (ctx) => {
@@ -441,9 +453,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await ctx.reply(msg, {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
-          [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke')],
-          [Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
-          [Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25'), Markup.button.url('📋 Mở PSOI Task Board ↗️', 'https://psoitask.surge.sh/')],
+          [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
+          [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep')],
+          [Markup.button.callback('🎁 Điểm Danh', 'pet_checkin'), Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25')],
+          [Markup.button.url('📋 Mở PSOI Task Board ↗️', 'https://psoitask.surge.sh/')],
         ]),
       });
     } catch (err) {
@@ -579,16 +592,15 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       }
 
       let inventory = user.inventory;
-      if (inventory.length === 0) {
-        // Initialize starter food supplies (3 of each)
-        await Promise.all([
-          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'shrimp', count: 3 } }),
-          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'fish_ram', count: 3 } }),
-          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'docker_jelly', count: 3 } }),
-          this.prisma.inventoryItem.create({ data: { userId: user.id, foodId: 'coffee_donut', count: 3 } }),
-        ]);
-        inventory = await this.prisma.inventoryItem.findMany({ where: { userId: user.id } });
+      const starterKeys = ['shrimp', 'fish_ram', 'docker_jelly', 'coffee_donut'];
+      for (const key of starterKeys) {
+        if (!inventory.some((i) => i.foodId === key)) {
+          await this.prisma.inventoryItem.create({
+            data: { userId: user.id, foodId: key, count: 3 },
+          }).catch(() => {});
+        }
       }
+      inventory = await this.prisma.inventoryItem.findMany({ where: { userId: user.id } });
 
       const getCount = (id: string) => inventory.find((i) => i.foodId === id)?.count ?? 0;
 
@@ -600,6 +612,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       ];
 
       const buttons = foods.map((f) => [Markup.button.callback(`Cho ăn ${f.name}`, `feed_item_${f.id}`)]);
+      buttons.push([Markup.button.callback('🎒 Xem Túi Đồ Chi Tiết', 'pet_bag')]);
 
       await ctx.reply(
         `🍱 <b>TÚI THỨC ĂN CÔNG NGHỆ</b>\n` +
@@ -612,6 +625,79 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       );
     } catch (err) {
       this.logger.error('handleFeed error:', (err as Error).message);
+    }
+  }
+
+  // Sub-handler: Show Inventory Bag
+  private async handleInventory(ctx: any) {
+    try {
+      const from = ctx.from;
+      if (!from) return;
+
+      const user = await this.getActiveUserWithPet(from.id);
+      if (!user) return;
+
+      let inventory = user.inventory;
+      const starterKeys = ['shrimp', 'fish_ram', 'docker_jelly', 'coffee_donut'];
+      for (const key of starterKeys) {
+        if (!inventory.some((i) => i.foodId === key)) {
+          await this.prisma.inventoryItem.create({
+            data: { userId: user.id, foodId: key, count: 3 },
+          }).catch(() => {});
+        }
+      }
+      inventory = await this.prisma.inventoryItem.findMany({ where: { userId: user.id } });
+
+      const foodNames: Record<string, { name: string; desc: string }> = {
+        shrimp: { name: '🦐 Tôm Debug', desc: '+30 No, +15 Hạnh phúc' },
+        fish_ram: { name: '🐟 Bánh Cá RAM', desc: '+25 No, +15 ⚡ Năng lượng' },
+        docker_jelly: { name: '🐳 Thạch Docker', desc: '+35 No, +10 Hạnh phúc' },
+        coffee_donut: { name: '🍩 Donut Espresso', desc: '+20 No, +25 ⚡ Năng lượng' },
+        bao: { name: '🥟 Bánh Bao Bug', desc: '+25 No, +15 Hạnh phúc' },
+        noodle_cup: { name: '🍜 Mì Ly Coder', desc: '+30 No, +15 ⚡ Năng lượng' },
+        bubble_tea: { name: '🧋 Trà Sữa Full Thạch', desc: '+15 No, +30 Hạnh phúc' },
+        onigiri: { name: '🍙 Cơm Nắm Git', desc: '+20 No, +15 ⚡ Năng lượng' },
+        ice_cream: { name: '🍦 Kem Ốc Quế CSS', desc: '+15 No, +25 Hạnh phúc' },
+        pizza: { name: '🍕 Pizza Deadline', desc: '+35 No, +20 Hạnh phúc' },
+        banh_mi: { name: '🥖 Bánh Mì Sài Gòn', desc: '+30 No, +20 ⚡ Năng lượng' },
+        golden_apple: { name: '🍎 Táo Vàng Hackathon', desc: '+40 No, +40 💖, +30 ⚡' },
+      };
+
+      const ownedItems = inventory.filter((i) => i.count > 0);
+      let itemsListText = '';
+
+      if (ownedItems.length === 0) {
+        itemsListText = '<i>Túi đồ của bạn hiện đang trống! Hãy điểm danh hoặc làm Pomodoro để kiếm thêm thức ăn nhé.</i>\n';
+      } else {
+        itemsListText = ownedItems
+          .map((i) => {
+            const info = foodNames[i.foodId] || { name: `🍱 ${i.foodId}`, desc: '+20 No' };
+            return `• <b>${info.name}</b>: x<b>${i.count} phần</b>\n  <i>(${info.desc})</i>`;
+          })
+          .join('\n\n');
+      }
+
+      const totalCount = inventory.reduce((sum, i) => sum + i.count, 0);
+
+      const msg =
+        `🎒 <b>TÚI ĐỒ CÔNG NGHỆ CỦA BẠN (INVENTORY)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        itemsListText + `\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📦 Tổng số phần ăn sẵn có: <b>${totalCount} món</b>\n\n` +
+        `💡 <b>Cách kiếm thêm thức ăn:</b>\n` +
+        `• Gõ <code>/checkin</code> mỗi ngày để nhận quà may mắn\n` +
+        `• Hoàn thành phiên Pomodoro (<code>/focus 25</code>) để nhặt thức ăn rơi!`;
+
+      await ctx.reply(msg, {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('🍖 Cho Ăn Ngay', 'pet_feed'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
+          [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
+        ]),
+      });
+    } catch (err) {
+      this.logger.error('handleInventory error:', (err as Error).message);
     }
   }
 
@@ -854,6 +940,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       `Bot giúp bạn chăm sóc thú cưng 3D và duy trì kỷ luật tập trung làm việc mọi lúc mọi nơi:\n\n` +
       `🐾 <b>/pet</b> hoặc <b>/status</b>\n` +
       `👉 Hiển thị thẻ sinh lực thú cưng: Độ no bụng, Hạnh phúc, Năng lượng, Cấp độ, EXP và Chuỗi ngày Streak.\n\n` +
+      `🎒 <b>/bag</b> hoặc <b>/inventory</b>\n` +
+      `👉 Mở túi đồ công nghệ: Kiểm tra số lượng tất cả các món ăn bạn đang sở hữu.\n\n` +
+      `🍖 <b>/feed</b>\n` +
+      `👉 Mở khay chọn món ăn công nghệ để cho bé ăn hồi phục độ no và hạnh phúc.\n\n` +
       `💤 <b>/sleep</b> hoặc <b>/rest</b>\n` +
       `👉 Cho thú cưng chợp mắt đi ngủ nghỉ ngơi để sạc đầy 100% thanh Năng lượng (⚡).\n\n` +
       `📋 <b>/task</b> hoặc <b>/tasks</b>\n` +

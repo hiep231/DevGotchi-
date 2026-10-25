@@ -61,7 +61,11 @@ export const PomodoroTimer: React.FC = () => {
   const [duration, setDuration] = useState(25 * 60);
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [rewardToast, setRewardToast] = useState<{ exp: number; leveledUp: boolean } | null>(null);
+  const [rewardToast, setRewardToast] = useState<{
+    exp: number;
+    leveledUp: boolean;
+    foodName?: string;
+  } | null>(null);
 
   // Strict Mode & Penalty State
   const [isStrictMode, setIsStrictMode] = useState<boolean>(() => {
@@ -185,11 +189,21 @@ export const PomodoroTimer: React.FC = () => {
         { minutes, tag: selectedTag, pet, foods },
         {
           onSuccess: (data) => {
-            setRewardToast({ exp: data.expGained, leveledUp: data.leveledUp });
+            setRewardToast({
+              exp: data.expGained,
+              leveledUp: data.leveledUp,
+              foodName: data.droppedFoodName,
+            });
             if (typeof window !== 'undefined') {
               const x = window.innerWidth / 2;
               const y = 300;
-              spawnFloatingReaction(x, y, `+${data.expGained} EXP • Hoàn thành! 🎉`, '#2EC4B6', '⭐');
+              spawnFloatingReaction(
+                x,
+                y,
+                `+${data.expGained} EXP • ${data.droppedFoodName ? `Nhận ${data.droppedFoodName}!` : 'Hoàn thành! 🎉'}`,
+                '#2EC4B6',
+                '⭐'
+              );
             }
             confetti({
               particleCount: 120,
@@ -199,6 +213,21 @@ export const PomodoroTimer: React.FC = () => {
           },
         }
       );
+    } else if ((mode === 'SHORT_BREAK' || mode === 'LONG_BREAK') && pet) {
+      tg.haptic.notification('success');
+      const energyGain = mode === 'LONG_BREAK' ? 30 : 15;
+      const updatedPet = {
+        ...pet,
+        energy: Math.min(100, pet.energy + energyGain),
+        happiness: Math.min(100, pet.happiness + 5),
+        mood: 'HAPPY' as const,
+      };
+      usePetStore.getState().setPet(updatedPet);
+      if (typeof window !== 'undefined') {
+        const x = window.innerWidth / 2;
+        const y = 300;
+        spawnFloatingReaction(x, y, `+${energyGain} ⚡ Nạp năng lượng!`, '#FFB703', '⚡');
+      }
     }
   };
 
@@ -239,10 +268,38 @@ export const PomodoroTimer: React.FC = () => {
       <Toast
         isOpen={Boolean(rewardToast)}
         message={`Hoàn thành phiên Pomodoro! +${rewardToast?.exp ?? 0} EXP`}
-        subMessage={rewardToast?.leveledUp ? '🎉 CHÚC MỪNG BÉ PET ĐÃ LÊN CẤP!' : 'Đã thưởng thêm 1 món ăn ngẫu nhiên vào túi!'}
+        subMessage={
+          rewardToast?.leveledUp
+            ? '🎉 CHÚC MỪNG BÉ PET ĐÃ LÊN CẤP!'
+            : rewardToast?.foodName
+            ? `🎁 Nhận được [${rewardToast.foodName}] thưởng vào túi!`
+            : 'Đã thưởng thêm 1 món ăn ngẫu nhiên vào túi!'
+        }
         type="reward"
         onClose={() => setRewardToast(null)}
       />
+
+      {/* Pomodoro Expedition Tier Banner */}
+      {mode === 'FOCUS' && (
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100 border-2 border-[var(--ink)] rounded-2xl p-2.5 shadow-[0_2px_0_var(--ink)] flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">👑</span>
+            <div className="flex flex-col">
+              <span className="font-heading font-black text-xs text-[var(--ink)] flex items-center gap-1.5">
+                Viễn Chinh Pomodoro
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-[var(--coral)] text-white font-black uppercase">
+                  {Math.round(duration / 60) >= 45 ? 'Huyền Thoại 100%' : 'High-Tier 45%'}
+                </span>
+              </span>
+              <span className="text-[10px] text-[var(--ink-soft)] font-medium">
+                {Math.round(duration / 60) >= 45
+                  ? '⭐ Chắc chắn săn được Táo Vàng Hackathon, Donut Espresso hoặc Thạch Docker!'
+                  : '✨ 45% cơ hội săn Thức ăn Hiếm & Huyền Thoại khi hoàn thành phiên.'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mode Switcher Tabs */}
       <div className="flex p-1.5 rounded-2xl bg-white border-2 border-[var(--ink)] shadow-[0_3px_0_var(--ink)]">
@@ -254,7 +311,7 @@ export const PomodoroTimer: React.FC = () => {
               : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
-          25m Focus
+          Focus
         </button>
         <button
           onClick={() => handleModeChange('SHORT_BREAK')}
@@ -264,7 +321,7 @@ export const PomodoroTimer: React.FC = () => {
               : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
-          5m Nghỉ ngắn
+          5m Nghỉ ngắn (+15⚡)
         </button>
         <button
           onClick={() => handleModeChange('LONG_BREAK')}
@@ -274,9 +331,47 @@ export const PomodoroTimer: React.FC = () => {
               : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
-          15m Nghỉ dài
+          15m Nghỉ dài (+30⚡)
         </button>
       </div>
+
+      {/* Focus Duration Selector (25m Standard vs 45m Expedition) */}
+      {mode === 'FOCUS' && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (isRunning) return;
+              tg.haptic.selection();
+              setDuration(25 * 60);
+              setTimeLeft(25 * 60);
+            }}
+            disabled={isRunning}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-heading font-black border-2 border-[var(--ink)] transition-all cursor-pointer ${
+              Math.round(duration / 60) === 25
+                ? 'bg-[var(--primary)] text-[var(--ink)] shadow-[0_2px_0_var(--ink)]'
+                : 'bg-white text-[var(--ink-soft)] opacity-70 hover:opacity-100'
+            }`}
+          >
+            ⏱️ 25 phút (Tiêu chuẩn)
+          </button>
+          <button
+            onClick={() => {
+              if (isRunning) return;
+              tg.haptic.selection();
+              setDuration(45 * 60);
+              setTimeLeft(45 * 60);
+            }}
+            disabled={isRunning}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-heading font-black border-2 border-[var(--ink)] transition-all cursor-pointer ${
+              Math.round(duration / 60) === 45
+                ? 'bg-gradient-to-r from-amber-300 to-orange-300 text-[var(--ink)] shadow-[0_2px_0_var(--ink)]'
+                : 'bg-white text-[var(--ink-soft)] opacity-70 hover:opacity-100'
+            }`}
+          >
+            👑 45 phút (Viễn Chinh)
+          </button>
+        </div>
+      )}
 
       {/* Strict Focus Anti-Distraction Toggle Card */}
       {mode === 'FOCUS' && (

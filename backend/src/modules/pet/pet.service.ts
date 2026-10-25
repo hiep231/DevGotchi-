@@ -2,7 +2,9 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdoptPetDto, PetTypeEnum } from './dto/adopt-pet.dto';
 import { FeedPetDto } from './dto/feed-pet.dto';
+import { MinigameRewardDto } from './dto/minigame-reward.dto';
 import { calculatePetDecay } from './pet-decay.util';
+import { evaluateAfkAdventure } from './pet-afk.util';
 
 const FAVORITE_FOOD_MAP: Record<PetTypeEnum, string> = {
   [PetTypeEnum.PUFFY]: 'shrimp',
@@ -162,8 +164,9 @@ export class PetService {
 
       if (user?.pet) {
         const decay = calculatePetDecay(user.pet);
+        let currentPet = user.pet;
         if (decay.hasDecayed) {
-          const updatedPet = await this.prisma.pet.update({
+          currentPet = await this.prisma.pet.update({
             where: { id: user.pet.id },
             data: {
               hunger: decay.decayedHunger,
@@ -173,9 +176,16 @@ export class PetService {
               lastFedAt: decay.newLastFedAt,
             },
           });
-          return { success: true, data: updatedPet };
         }
-        return { success: true, data: user.pet };
+
+        // Check if pet was on an AFK adventure (>= 4 hours offline)
+        const afk = evaluateAfkAdventure(user, currentPet);
+
+        return {
+          success: true,
+          data: currentPet,
+          afkAdventure: afk.hasReward ? afk : undefined,
+        };
       }
     } catch (err) {
       console.error('getMyPet error:', err);
@@ -346,6 +356,179 @@ export class PetService {
       data: updatedPet,
       remainingCount: updatedItem.count,
       message: isFav ? 'Khoái khẩu! Thưởng thêm 15 điểm no & vui vẻ!' : 'Bé pet đã được ăn no!',
+    };
+  }
+
+  async claimMinigameReward(dto: MinigameRewardDto, telegramId?: number) {
+    const tid = telegramId ? BigInt(telegramId) : 100000001n;
+
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: tid },
+      include: { pet: true, inventory: true },
+    });
+
+    if (!user?.pet) {
+      throw new NotFoundException('Chưa tìm thấy thú cưng! Hãy nhận nuôi trước nhé.');
+    }
+
+    const pet = user.pet;
+
+    // 1. Calculate rewards based on score
+    const expGained = Math.min(80, Math.max(15, dto.score * 3));
+    const happinessGain = Math.min(25, Math.max(10, Math.floor(dto.score / 2)));
+    const energyGain = 5;
+
+    // Determine reward food item
+    let rewardFood = 'shrimp';
+    let rewardFoodName = '🦐 Tôm Debug';
+    if (dto.score >= 20) {
+      const topPicks = [
+        { id: 'docker_jelly', name: '🐳 Thạch Docker' },
+        { id: 'coffee_donut', name: '🍩 Donut Espresso' },
+      ];
+      const pick = topPicks[Math.floor(Math.random() * topPicks.length)];
+      rewardFood = pick.id;
+      rewardFoodName = pick.name;
+    } else if (dto.score >= 10) {
+      rewardFood = 'fish_ram';
+      rewardFoodName = '🐟 Bánh Cá RAM';
+    }
+
+    // 2. EXP & Level Progression
+    let newExp = pet.exp + expGained;
+    let newLevel = pet.level;
+    let newMaxExp = pet.maxExp;
+    let leveledUp = false;
+
+    while (newExp >= newMaxExp) {
+      newExp -= newMaxExp;
+      newLevel += 1;
+      newMaxExp = Math.round(newMaxExp * 1.35);
+      leveledUp = true;
+    }
+
+    const newHappy = Math.min(100, pet.happiness + happinessGain);
+    const newEnergy = Math.min(100, pet.energy + energyGain);
+
+    // 3. Upsert inventory item & update Pet
+    const existingItem = user.inventory.find((i) => i.foodId === rewardFood);
+
+    const [updatedPet] = await this.prisma.$transaction([
+      this.prisma.pet.update({
+        where: { id: pet.id },
+        data: {
+          exp: newExp,
+          level: newLevel,
+          maxExp: newMaxExp,
+          happiness: newHappy,
+          energy: newEnergy,
+          mood: 'HAPPY',
+        },
+      }),
+      existingItem
+        ? this.prisma.inventoryItem.update({
+            where: { id: existingItem.id },
+            data: { count: existingItem.count + 1 },
+          })
+        : this.prisma.inventoryItem.create({
+            data: {
+              userId: user.id,
+              foodId: rewardFood,
+              count: 1,
+            },
+          }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        pet: updatedPet,
+        expGained,
+        happinessGained: happinessGain,
+        energyGained: energyGain,
+        rewardFood,
+        rewardFoodName,
+        leveledUp,
+      },
+      message: `Bắt được ${dto.score} bug! Nhận được ${rewardFoodName} và +${expGained} EXP!`,
+    };
+  }
+
+  async claimAfkReward(telegramId?: number) {
+    const tid = telegramId ? BigInt(telegramId) : 100000001n;
+
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: tid },
+      include: { pet: true, inventory: true },
+    });
+
+    if (!user?.pet) {
+      throw new NotFoundException('Chưa tìm thấy thú cưng!');
+    }
+
+    const afk = evaluateAfkAdventure(user, user.pet);
+    if (!afk.hasReward) {
+      return { success: false, message: 'Bé chưa đi thám hiểm đủ lâu (cần ít nhất 4 tiếng vắng nhà)!' };
+    }
+
+    // EXP & Level Progression
+    let newExp = user.pet.exp + afk.expGained;
+    let newLevel = user.pet.level;
+    let newMaxExp = user.pet.maxExp;
+    let leveledUp = false;
+
+    while (newExp >= newMaxExp) {
+      newExp -= newMaxExp;
+      newLevel += 1;
+      newMaxExp = Math.round(newMaxExp * 1.35);
+      leveledUp = true;
+    }
+
+    // Upsert loot items into user's inventory
+    const inventoryUpdates = afk.loot.map((lootItem) => {
+      const existing = user.inventory.find((i) => i.foodId === lootItem.id);
+      return existing
+        ? this.prisma.inventoryItem.update({
+            where: { id: existing.id },
+            data: { count: existing.count + lootItem.count },
+          })
+        : this.prisma.inventoryItem.create({
+            data: {
+              userId: user.id,
+              foodId: lootItem.id,
+              count: lootItem.count,
+            },
+          });
+    });
+
+    // Update Pet (100% energy recharge, EXP gained, happy) & update user.lastActive
+    const [updatedPet] = await this.prisma.$transaction([
+      this.prisma.pet.update({
+        where: { id: user.pet.id },
+        data: {
+          exp: newExp,
+          level: newLevel,
+          maxExp: newMaxExp,
+          energy: 100,
+          happiness: Math.min(100, user.pet.happiness + 15),
+          mood: 'HAPPY',
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { lastActive: new Date() },
+      }),
+      ...inventoryUpdates,
+    ]);
+
+    return {
+      success: true,
+      data: {
+        pet: updatedPet,
+        afk,
+        leveledUp,
+      },
+      message: `Nhận thành công quà thám hiểm: +${afk.expGained} EXP, sạc đầy 100% ⚡ Năng lượng và ${afk.loot.map((l) => `${l.name} x${l.count}`).join(', ')}!`,
     };
   }
 

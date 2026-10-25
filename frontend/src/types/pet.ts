@@ -54,3 +54,18 @@ export interface FoodItem {
   description: string;
   count: number;
 }
+
+export interface AfkLootItem {
+  id: string;
+  name: string;
+  icon: string;
+  count: number;
+}
+
+export interface AfkAdventureData {
+  hoursAway: number;
+  expGained: number;
+  energyRestored: number;
+  loot: AfkLootItem[];
+  story: string;
+}

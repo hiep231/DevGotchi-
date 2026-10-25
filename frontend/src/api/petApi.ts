@@ -1,7 +1,7 @@
-import { FoodItem, PetState, PetType } from '../types/pet';
+import { AfkAdventureData, FoodItem, PetState, PetType } from '../types/pet';
 import { INITIAL_FOODS, STARTER_PETS } from '../data/petConfigs';
 import { tg } from '../utils/telegram';
-import { getStorageKey, getFoodStorageKey } from '../store/usePetStore';
+import { getStorageKey, getFoodStorageKey, usePetStore } from '../store/usePetStore';
 
 function getTelegramIdParam(): string {
   const tid = tg.user?.id;
@@ -16,7 +16,11 @@ export const petApi = {
       if (res.ok) {
         const json = await res.json();
         const p = json.data;
+        if (json.afkAdventure) {
+          usePetStore.getState().setAfkAdventure(json.afkAdventure);
+        }
         if (p) {
+          localStorage.setItem('devgotchi_last_active_time', Date.now().toString());
           return {
             ...p,
             customName: p.customName || p.name || 'Pet',
@@ -34,7 +38,29 @@ export const petApi = {
     }
 
     const saved = localStorage.getItem(getStorageKey());
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      try {
+        const parsed: PetState = JSON.parse(saved);
+        // Offline AFK Adventure check (>= 4 hours)
+        const lastActiveStr = localStorage.getItem('devgotchi_last_active_time');
+        const now = Date.now();
+        if (lastActiveStr) {
+          const diffHours = (now - parseInt(lastActiveStr, 10)) / (1000 * 60 * 60);
+          if (diffHours >= 4 && !usePetStore.getState().afkAdventure) {
+            usePetStore.getState().setAfkAdventure({
+              hoursAway: Math.min(24, Math.floor(diffHours)),
+              expGained: Math.min(80, 20 * Math.max(1, Math.floor(diffHours / 4))),
+              energyRestored: 100,
+              loot: [{ id: 'fish_ram', name: 'Bánh Cá RAM', icon: '🐟', count: 1 }],
+              story: 'Lúc sen vắng nhà, trẫm đi dạo qua server và nhặt được quà nè!',
+            });
+          }
+        }
+        localStorage.setItem('devgotchi_last_active_time', now.toString());
+        return parsed;
+      } catch {}
+    }
+    return null;
   },
 
   // Fetch food inventory
@@ -169,7 +195,15 @@ export const petApi = {
     tag: string,
     currentPet: PetState,
     foods: FoodItem[]
-  ): Promise<{ pet: PetState; foods: FoodItem[]; expGained: number; leveledUp: boolean }> {
+  ): Promise<{
+    pet: PetState;
+    foods: FoodItem[];
+    expGained: number;
+    leveledUp: boolean;
+    droppedFood: string;
+    droppedFoodName: string;
+    foodTier: string;
+  }> {
     const baseExp = minutes * 4;
     const config = STARTER_PETS.find((p) => p.id === currentPet.type);
     let bonusExp = 0;
@@ -192,21 +226,89 @@ export const petApi = {
       leveledUp = true;
     }
 
-    const randomFoodIndex = Math.floor(Math.random() * foods.length);
-    const updatedFoods = [...foods];
-    updatedFoods[randomFoodIndex] = {
-      ...updatedFoods[randomFoodIndex],
-      count: updatedFoods[randomFoodIndex].count + (leveledUp ? 3 : 1),
-    };
+    // Phase 4 Loot Table: Pomodoro as Expedition
+    let droppedFood = 'shrimp';
+    let droppedFoodName = '🦐 Tôm Debug';
+    let foodTier = 'COMMON';
 
-    const updatedPet: PetState = {
+    if (minutes >= 45) {
+      const deepWorkDrops = [
+        { id: 'golden_apple', name: '🍎 Táo Vàng Hackathon', tier: 'LEGENDARY' },
+        { id: 'coffee_donut', name: '🍩 Donut Espresso', tier: 'RARE' },
+        { id: 'docker_jelly', name: '🐳 Thạch Docker', tier: 'RARE' },
+      ];
+      const pick = deepWorkDrops[Math.floor(Math.random() * deepWorkDrops.length)];
+      droppedFood = pick.id;
+      droppedFoodName = pick.name;
+      foodTier = pick.tier;
+    } else if (minutes >= 25) {
+      const rand = Math.random();
+      if (rand < 0.20) {
+        droppedFood = 'golden_apple';
+        droppedFoodName = '🍎 Táo Vàng Hackathon';
+        foodTier = 'LEGENDARY';
+      } else if (rand < 0.50) {
+        const pick = Math.random() > 0.5
+          ? { id: 'coffee_donut', name: '🍩 Donut Espresso' }
+          : { id: 'docker_jelly', name: '🐳 Thạch Docker' };
+        droppedFood = pick.id;
+        droppedFoodName = pick.name;
+        foodTier = 'RARE';
+      } else {
+        const gourmetDrops = [
+          { id: 'bao', name: '🥟 Bánh Bao Bug' },
+          { id: 'noodle_cup', name: '🍜 Mì Ly Terminal' },
+          { id: 'pizza', name: '🍕 Pizza Deadline' },
+          { id: 'fish_ram', name: '🐟 Bánh Cá RAM' },
+        ];
+        const pick = gourmetDrops[Math.floor(Math.random() * gourmetDrops.length)];
+        droppedFood = pick.id;
+        droppedFoodName = pick.name;
+        foodTier = 'GOURMET';
+      }
+    } else {
+      const lightDrops = [
+        { id: 'shrimp', name: '🦐 Tôm Debug' },
+        { id: 'fish_ram', name: '🐟 Bánh Cá RAM' },
+        { id: 'bao', name: '🥟 Bánh Bao Bug' },
+      ];
+      const pick = lightDrops[Math.floor(Math.random() * lightDrops.length)];
+      droppedFood = pick.id;
+      droppedFoodName = pick.name;
+      foodTier = 'COMMON';
+    }
+
+    const updatedFoods = [...foods];
+    const foodIdx = updatedFoods.findIndex((f) => f.id === droppedFood);
+    if (foodIdx !== -1) {
+      updatedFoods[foodIdx] = {
+        ...updatedFoods[foodIdx],
+        count: updatedFoods[foodIdx].count + (leveledUp ? 2 : 1),
+      };
+    } else {
+      updatedFoods.push({
+        id: droppedFood,
+        name: droppedFoodName,
+        icon: '🍱',
+        color: 'from-amber-400 to-orange-500',
+        hungerRestored: 30,
+        happinessBonus: 20,
+        count: leveledUp ? 2 : 1,
+        description: 'Phần thưởng viễn chinh Pomodoro!',
+      });
+    }
+
+    // Energy does not drain to exhaustion; pet gains +5 Energy & +20 Happiness!
+    const newEnergy = Math.min(100, (currentPet.energy ?? 85) + 5);
+
+    let updatedPet: PetState = {
       ...currentPet,
       level: newLevel,
       exp: newExp,
       maxExp: newMaxExp,
       totalFocusMinutes: currentPet.totalFocusMinutes + minutes,
-      energy: Math.max(10, currentPet.energy - 10),
-      happiness: Math.min(100, currentPet.happiness + 15),
+      energy: newEnergy,
+      happiness: Math.min(100, currentPet.happiness + 20),
       mood: 'HAPPY',
     };
 
@@ -214,16 +316,207 @@ export const petApi = {
     localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
 
     try {
-      await fetch(`/api/sessions/complete${getTelegramIdParam()}`, {
+      const res = await fetch(`/api/sessions/complete${getTelegramIdParam()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ durationMinutes: minutes, tag }),
       });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.pet) {
+          updatedPet = {
+            ...updatedPet,
+            ...json.data.pet,
+            customName: json.data.pet.customName || updatedPet.customName,
+          };
+          localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+        }
+      }
     } catch {
       // Offline fallback
     }
 
-    return { pet: updatedPet, foods: updatedFoods, expGained, leveledUp };
+    return {
+      pet: updatedPet,
+      foods: updatedFoods,
+      expGained,
+      leveledUp,
+      droppedFood,
+      droppedFoodName,
+      foodTier,
+    };
+  },
+
+  // Claim Minigame Reward (30s Catch-The-Bug)
+  async claimMinigameReward(
+    score: number,
+    currentPet: PetState,
+    foods: FoodItem[]
+  ): Promise<{
+    pet: PetState;
+    foods: FoodItem[];
+    expGained: number;
+    happinessGained: number;
+    rewardFood: string;
+    rewardFoodName: string;
+    leveledUp: boolean;
+  }> {
+    const expGained = Math.min(80, Math.max(15, score * 3));
+    const happinessGain = Math.min(25, Math.max(10, Math.floor(score / 2)));
+
+    let rewardFood = 'shrimp';
+    let rewardFoodName = '🦐 Tôm Debug';
+    if (score >= 20) {
+      rewardFood = Math.random() > 0.5 ? 'docker_jelly' : 'coffee_donut';
+      rewardFoodName = rewardFood === 'docker_jelly' ? '🐳 Thạch Docker' : '🍩 Donut Espresso';
+    } else if (score >= 10) {
+      rewardFood = 'fish_ram';
+      rewardFoodName = '🐟 Bánh Cá RAM';
+    }
+
+    let newExp = currentPet.exp + expGained;
+    let newLevel = currentPet.level;
+    let newMaxExp = currentPet.maxExp;
+    let leveledUp = false;
+
+    while (newExp >= newMaxExp) {
+      newExp -= newMaxExp;
+      newLevel += 1;
+      newMaxExp = Math.round(newMaxExp * 1.35);
+      leveledUp = true;
+    }
+
+    let updatedPet: PetState = {
+      ...currentPet,
+      exp: newExp,
+      level: newLevel,
+      maxExp: newMaxExp,
+      happiness: Math.min(100, currentPet.happiness + happinessGain),
+      energy: Math.min(100, (currentPet.energy ?? 85) + 5),
+      mood: 'HAPPY',
+    };
+
+    // Add 1 reward food to inventory
+    const updatedFoods = foods.map((f) =>
+      f.id === rewardFood ? { ...f, count: f.count + 1 } : f
+    );
+    if (!updatedFoods.some((f) => f.id === rewardFood)) {
+      updatedFoods.push({
+        id: rewardFood,
+        name: rewardFoodName,
+        icon: '🍱',
+        color: 'from-amber-400 to-orange-500',
+        hungerRestored: 25,
+        happinessBonus: 15,
+        count: 1,
+        description: 'Chiến lợi phẩm từ Mini-game diệt bug!',
+      });
+    }
+
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
+
+    try {
+      const res = await fetch(`/api/pets/minigame-reward${getTelegramIdParam()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.pet) {
+          updatedPet = {
+            ...updatedPet,
+            ...json.data.pet,
+            customName: json.data.pet.customName || updatedPet.customName,
+          };
+          localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+        }
+      }
+    } catch {
+      // Offline fallback
+    }
+
+    return {
+      pet: updatedPet,
+      foods: updatedFoods,
+      expGained,
+      happinessGained: happinessGain,
+      rewardFood,
+      rewardFoodName,
+      leveledUp,
+    };
+  },
+
+  // Claim AFK Adventure Loot
+  async claimAfkReward(
+    currentPet: PetState,
+    foods: FoodItem[],
+    afkData: AfkAdventureData
+  ): Promise<{ pet: PetState; foods: FoodItem[] }> {
+    let newExp = currentPet.exp + afkData.expGained;
+    let newLevel = currentPet.level;
+    let newMaxExp = currentPet.maxExp;
+
+    while (newExp >= newMaxExp) {
+      newExp -= newMaxExp;
+      newLevel += 1;
+      newMaxExp = Math.round(newMaxExp * 1.35);
+    }
+
+    let updatedPet: PetState = {
+      ...currentPet,
+      exp: newExp,
+      level: newLevel,
+      maxExp: newMaxExp,
+      energy: 100,
+      happiness: Math.min(100, currentPet.happiness + 15),
+      mood: 'HAPPY',
+    };
+
+    let updatedFoods = [...foods];
+    for (const item of afkData.loot) {
+      const idx = updatedFoods.findIndex((f) => f.id === item.id);
+      if (idx !== -1) {
+        updatedFoods[idx] = { ...updatedFoods[idx], count: updatedFoods[idx].count + item.count };
+      } else {
+        updatedFoods.push({
+          id: item.id,
+          name: item.name,
+          icon: item.icon,
+          color: 'from-amber-400 to-orange-500',
+          hungerRestored: 25,
+          happinessBonus: 15,
+          count: item.count,
+          description: 'Chiến lợi phẩm thám hiểm khi sen vắng nhà!',
+        });
+      }
+    }
+
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+    localStorage.setItem(getFoodStorageKey(), JSON.stringify(updatedFoods));
+    localStorage.setItem('devgotchi_last_active_time', Date.now().toString());
+
+    try {
+      const res = await fetch(`/api/pets/claim-afk${getTelegramIdParam()}`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.pet) {
+          updatedPet = {
+            ...updatedPet,
+            ...json.data.pet,
+            customName: json.data.pet.customName || updatedPet.customName,
+          };
+          localStorage.setItem(getStorageKey(), JSON.stringify(updatedPet));
+        }
+      }
+    } catch {
+      // Offline fallback
+    }
+
+    return { pet: updatedPet, foods: updatedFoods };
   },
 
   // Reset Pet

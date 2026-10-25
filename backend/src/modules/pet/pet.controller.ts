@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Query, UsePipes, ValidationPipe } from '@n
 import { PetService } from './pet.service';
 import { AdoptPetDto } from './dto/adopt-pet.dto';
 import { FeedPetDto } from './dto/feed-pet.dto';
+import { MinigameRewardDto } from './dto/minigame-reward.dto';
 
 @Controller('pets')
 export class PetController {
@@ -25,6 +26,19 @@ export class PetController {
   async feedPet(@Body() dto: FeedPetDto, @Query('telegramId') telegramId?: string) {
     const tid = telegramId ? parseInt(telegramId, 10) : undefined;
     return this.petService.feedPet(dto, tid);
+  }
+
+  @Post('minigame-reward')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async claimMinigameReward(@Body() dto: MinigameRewardDto, @Query('telegramId') telegramId?: string) {
+    const tid = telegramId ? parseInt(telegramId, 10) : undefined;
+    return this.petService.claimMinigameReward(dto, tid);
+  }
+
+  @Post('claim-afk')
+  async claimAfkReward(@Query('telegramId') telegramId?: string) {
+    const tid = telegramId ? parseInt(telegramId, 10) : undefined;
+    return this.petService.claimAfkReward(tid);
   }
 
   @Post('reset')

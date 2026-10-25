@@ -4,6 +4,7 @@ import { Telegraf, Markup } from 'telegraf';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { calculatePetDecay } from '../pet/pet-decay.util';
+import { evaluateAfkAdventure } from '../pet/pet-afk.util';
 
 const PET_SPECIES_NAMES: Record<string, string> = {
   PUFFY: 'Cá Nóc Trí Thức',
@@ -57,6 +58,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         { command: 'bag', description: '🎒 Xem túi đồ & kho thức ăn sẵn có' },
         { command: 'feed', description: '🍖 Cho thú cưng ăn nạp no bụng' },
         { command: 'sleep', description: '💤 Cho thú cưng đi ngủ sạc đầy Năng lượng (100% ⚡)' },
+        { command: 'game', description: '🎮 Chơi Mini-game 30s bắt bug xả stress & kiếm đồ ăn' },
         { command: 'task', description: '📋 Mở Web Quản Lý Task (PSOI Task)' },
         { command: 'poke', description: '👋 Xoa đầu, cưng nựng bé cưng (+3 💖)' },
         { command: 'focus', description: '⏱️ Pomodoro tập trung (vd: /focus 25 Coding)' },
@@ -135,9 +137,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([
               [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
-              [Markup.button.callback('🎒 Túi Đồ', 'pet_bag'), Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep')],
-              [Markup.button.callback('🎁 Điểm Danh', 'pet_checkin'), Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25')],
-              [Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/'), Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
+              [Markup.button.callback('🎮 Bắt Bug (Mini-Game)', 'pet_game'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
+              [Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
+              [Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25'), Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
+              [Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
             ]),
           });
         } else {
@@ -220,7 +223,12 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await this.handleFocusCommand(ctx);
     });
 
-    // 7. /help command
+    // 7. /game /play command
+    this.bot.command(['game', 'play'], async (ctx) => {
+      await this.handleGameCommand(ctx);
+    });
+
+    // 8. /help command
     this.bot.command('help', async (ctx) => {
       await this.sendHelpMessage(ctx);
     });
@@ -252,6 +260,24 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     this.bot.action('pet_checkin', async (ctx) => {
       await ctx.answerCbQuery();
       await this.handleCheckin(ctx);
+    });
+
+    this.bot.action('pet_game', async (ctx) => {
+      await ctx.answerCbQuery('🎮 Mở Mini-game 30s!');
+      await this.handleGameCommand(ctx);
+    });
+
+    // In-Chat Quick Smash Mini-game actions
+    this.bot.action('quick_smash_start', async (ctx) => {
+      await this.handleQuickSmash(ctx);
+    });
+
+    this.bot.action('quick_smash_hit', async (ctx) => {
+      await this.handleQuickSmashHit(ctx);
+    });
+
+    this.bot.action('quick_smash_miss', async (ctx) => {
+      await ctx.answerCbQuery('😅 Đập trúng code sạch rồi, hãy tìm con bọ nhé!');
     });
 
     this.bot.action('pet_sleep', async (ctx) => {
@@ -360,6 +386,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         const cleanText = text.slice(0, 250);
 
         const user = await this.getActiveUserWithPet(from.id);
+        if (user?.pet) {
+          await this.checkAndNotifyAfkAdventure(ctx, user);
+        }
 
         const pet = user?.pet;
         const petName = pet?.name || 'DevGotchi';
@@ -403,6 +432,82 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     return user;
   }
 
+  // Check and claim AFK exploration adventure loot when user returns (>= 4 hours)
+  private async checkAndNotifyAfkAdventure(ctx: any, user: any) {
+    if (!user?.pet) return;
+
+    try {
+      const afk = evaluateAfkAdventure(user, user.pet);
+      if (!afk.hasReward) return;
+
+      const newExp = user.pet.exp + afk.expGained;
+      let newLevel = user.pet.level;
+      let newMax = user.pet.maxExp;
+      if (newExp >= newMax) {
+        newLevel += 1;
+        newMax = Math.round(newMax * 1.35);
+      }
+
+      const inventoryUpdates = afk.loot.map((lootItem: any) => {
+        const existing = user.inventory.find((i: any) => i.foodId === lootItem.id);
+        return existing
+          ? this.prisma.inventoryItem.update({
+              where: { id: existing.id },
+              data: { count: existing.count + lootItem.count },
+            })
+          : this.prisma.inventoryItem.create({
+              data: {
+                userId: user.id,
+                foodId: lootItem.id,
+                count: lootItem.count,
+              },
+            });
+      });
+
+      await this.prisma.$transaction([
+        this.prisma.pet.update({
+          where: { id: user.pet.id },
+          data: {
+            exp: newExp >= newMax ? newExp - newMax : newExp,
+            level: newLevel,
+            maxExp: newMax,
+            energy: 100,
+            happiness: Math.min(100, user.pet.happiness + 15),
+            mood: 'HAPPY',
+          },
+        }),
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: { lastActive: new Date() },
+        }),
+        ...inventoryUpdates,
+      ]);
+
+      // Update in-memory user reference
+      user.pet.energy = 100;
+      user.pet.exp = newExp >= newMax ? newExp - newMax : newExp;
+      user.pet.level = newLevel;
+      user.pet.maxExp = newMax;
+      user.pet.happiness = Math.min(100, user.pet.happiness + 15);
+
+      const emoji = PET_EMOJIS[user.pet.type] || '🐾';
+      const lootList = afk.loot.map((l: any) => `• <b>${l.name}</b> x${l.count}`).join('\n');
+      const msg =
+        `🎒 <b>BÉ VỪA ĐI THÁM HIỂM KHI BẠN VẮNG NHÀ VỀ!</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `${emoji} <b>${user.pet.name}</b>: <i>"${afk.story}"</i>\n\n` +
+        `⏰ Đã vắng nhà: <b>${afk.hoursAway} tiếng</b>\n` +
+        `⚡ Năng lượng: <b>Hồi phục 100% đầy bình</b>\n` +
+        `⭐ EXP nhận được: <b>+${afk.expGained} EXP</b>\n` +
+        `🎁 Chiến lợi phẩm nhặt được:\n${lootList}\n\n` +
+        `<i>Toàn bộ quà đã được cất cẩn thận vào túi đồ của bạn!</i>`;
+
+      await ctx.reply(msg, { parse_mode: 'HTML' });
+    } catch (err) {
+      this.logger.error('checkAndNotifyAfkAdventure error:', (err as Error).message);
+    }
+  }
+
   // Sub-handler: Send Pet Status Card
   private async sendPetStatus(ctx: any) {
     try {
@@ -410,6 +515,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       if (!from) return;
 
       const user = await this.getActiveUserWithPet(from.id);
+      if (user?.pet) {
+        await this.checkAndNotifyAfkAdventure(ctx, user);
+      }
 
       if (!user?.pet) {
         await ctx.reply(
@@ -453,10 +561,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await ctx.reply(msg, {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
-          [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
-          [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep')],
-          [Markup.button.callback('🎁 Điểm Danh', 'pet_checkin'), Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25')],
-          [Markup.button.url('📋 Mở PSOI Task Board ↗️', 'https://psoitask.surge.sh/')],
+          [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('🎮 Bắt Bug 30s', 'pet_game')],
+          [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
+          [Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
+          [Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25'), Markup.button.url('📋 PSOI Task', 'https://psoitask.surge.sh/')],
         ]),
       });
     } catch (err) {
@@ -699,6 +807,143 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       });
     } catch (err) {
       this.logger.error('handleInventory error:', (err as Error).message);
+    }
+  }
+
+  // Sub-handler: /game or /play Mini-game
+  private async handleGameCommand(ctx: any) {
+    try {
+      const from = ctx.from;
+      if (!from) return;
+      const user = await this.getActiveUserWithPet(from.id);
+      if (!user?.pet) {
+        await ctx.reply('🐾 Bạn chưa có linh thú! Hãy nhận nuôi trước nhé.');
+        return;
+      }
+
+      const msg =
+        `🎮 <b>MINI-GAME 30s: BẮT BUG XẢ STRESS! 🐞</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `Thú cưng <b>${user.pet.name}</b> đang rất hăng hái muốn cùng bạn đi săn bug xả stress!\n\n` +
+        `⚡ <b>Luật chơi siêu nhanh (30 giây):</b>\n` +
+        `• Các chú bọ lỗi (Bug 🐞, Worm 🐛, Exception ⚠️, NullPointer 💥) sẽ rơi xuống màn hình.\n` +
+        `• Bạn chỉ cần chạm/tap liên tục để bé thú cưng đè bẹp bug và gom chuỗi combo!\n\n` +
+        `🎁 <b>Bảng phần thưởng chiến lợi phẩm:</b>\n` +
+        `• Bắt $\\ge$ 20 bug: <b>🐳 Thạch Docker / 🍩 Donut</b> + <b>+80 EXP</b> + <b>+25 💖</b>\n` +
+        `• Bắt $\\ge$ 10 bug: <b>🐟 Bánh Cá RAM</b> + <b>+45 EXP</b> + <b>+15 💖</b>\n` +
+        `• Bắt < 10 bug: <b>🦐 Tôm Debug</b> + <b>+25 EXP</b> + <b>+10 💖</b>\n\n` +
+        `👉 <b>Chọn cách chơi bên dưới:</b>`;
+
+      const webAppUrl = process.env.WEBAPP_URL;
+      const launchAppButton = webAppUrl && webAppUrl.startsWith('https://')
+        ? Markup.button.webApp('🚀 Mở Mini App Bắt Bug 30s 🕹️', webAppUrl)
+        : Markup.button.url('🚀 Mở Mini App Bắt Bug 30s 🕹️', 'https://t.me/devgotchi_pet_bot/app');
+
+      await ctx.reply(msg, {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([
+          [launchAppButton],
+          [Markup.button.callback('⚡ Đập Bug Nhanh Tại Chat', 'quick_smash_start')],
+          [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
+          [Markup.button.callback('🎒 Xem Túi Đồ', 'pet_bag'), Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
+        ]),
+      });
+    } catch (err) {
+      this.logger.error('handleGameCommand error:', (err as Error).message);
+    }
+  }
+
+  // Quick In-Chat Bug Smash Game (Randomized 3-button whack-a-mole)
+  private async handleQuickSmash(ctx: any) {
+    try {
+      await ctx.answerCbQuery();
+      const options = [
+        Markup.button.callback('📦 Code Sạch', 'quick_smash_miss'),
+        Markup.button.callback('🐞 ĐẬP BỌ LỖI!', 'quick_smash_hit'),
+        Markup.button.callback('☕ Ly Cà Phê', 'quick_smash_miss'),
+      ];
+      // Shuffle buttons so the bug moves around
+      options.sort(() => Math.random() - 0.5);
+
+      const msg =
+        `👀 <b>KÌA CON BUG VỪA XUẤT HIỆN! 🐞</b>\n\n` +
+        `Nó đang chuẩn bị làm crash server production! Đập nhanh vào con bọ trước khi nó tẩu thoát:`;
+
+      await ctx.reply(msg, {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([
+          options,
+          [Markup.button.callback('🔙 Quay Lại Menu Game', 'pet_game')],
+        ]),
+      });
+    } catch (err) {
+      this.logger.error('handleQuickSmash error:', (err as Error).message);
+    }
+  }
+
+  private async handleQuickSmashHit(ctx: any) {
+    try {
+      const from = ctx.from;
+      if (!from) return;
+
+      const user = await this.getActiveUserWithPet(from.id);
+      if (!user?.pet) return;
+
+      // Award +5 EXP and +3 Happiness
+      const newExp = user.pet.exp + 5;
+      let newLevel = user.pet.level;
+      let newMax = user.pet.maxExp;
+      if (newExp >= newMax) {
+        newLevel += 1;
+        newMax = Math.round(newMax * 1.35);
+      }
+
+      await this.prisma.pet.update({
+        where: { id: user.pet.id },
+        data: {
+          exp: newExp >= newMax ? newExp - newMax : newExp,
+          level: newLevel,
+          maxExp: newMax,
+          happiness: Math.min(100, user.pet.happiness + 3),
+        },
+      });
+
+      await ctx.answerCbQuery('💥 BỐP! ĐÃ ĐÈ BẸP CON BUG!');
+
+      const webAppUrl = process.env.WEBAPP_URL;
+      const launchAppButton = webAppUrl && webAppUrl.startsWith('https://')
+        ? Markup.button.webApp('🚀 Vào Mini App Bắt Bug 30s Cực Đã', webAppUrl)
+        : Markup.button.url('🚀 Vào Mini App Bắt Bug 30s Cực Đã', 'https://t.me/devgotchi_pet_bot/app');
+
+      const msg =
+        `💥 <b>BỐP! BẠN ĐÃ TIÊU DIỆT THÀNH CÔNG CON BUG!</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `🐾 <b>${user.pet.name}</b> nhảy cẫng lên vì vui sướng!\n` +
+        `⭐ Thưởng: <b>+5 EXP</b>\n` +
+        `💖 Hạnh phúc: <b>+3 Điểm</b> (Hiện tại: <b>${Math.min(100, user.pet.happiness + 3)}/100</b>)\n\n` +
+        `🏆 <i>Muốn chơi đã tay hơn với 30 giây liên hoàn bọ rơi, chuỗi Combo x3 và nhặt Thạch Docker/Bánh Cá RAM?</i>\n` +
+        `👇 <b>Bấm mở Mini App bên dưới để chiến ngay:</b>`;
+
+      if (ctx.callbackQuery?.message) {
+        await ctx.editMessageText(msg, {
+          parse_mode: 'HTML',
+          ...Markup.inlineKeyboard([
+            [launchAppButton],
+            [Markup.button.callback('⚡ Đập Tiếp Con Khác', 'quick_smash_start')],
+            [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🎒 Xem Túi Đồ', 'pet_bag')],
+          ]),
+        });
+      } else {
+        await ctx.reply(msg, {
+          parse_mode: 'HTML',
+          ...Markup.inlineKeyboard([
+            [launchAppButton],
+            [Markup.button.callback('⚡ Đập Tiếp Con Khác', 'quick_smash_start')],
+          ]),
+        });
+      }
+    } catch (err) {
+      this.logger.error('handleQuickSmashHit error:', (err as Error).message);
     }
   }
 

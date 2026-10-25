@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { petApi } from '../api/petApi';
-import { FoodItem, PetState, PetType } from '../types/pet';
+import { AfkAdventureData, FoodItem, PetState, PetType } from '../types/pet';
 import { usePetStore } from '../store/usePetStore';
 
 export const PET_QUERY_KEY = ['pet'] as const;
@@ -100,6 +100,55 @@ export const useResetPetMutation = () => {
       queryClient.setQueryData(PET_QUERY_KEY, null);
       queryClient.invalidateQueries({ queryKey: FOODS_QUERY_KEY });
       resetPetStore();
+    },
+  });
+};
+
+export const useMinigameRewardMutation = () => {
+  const queryClient = useQueryClient();
+  const { setPet } = usePetStore();
+
+  return useMutation({
+    mutationFn: async ({
+      score,
+      pet,
+      foods,
+    }: {
+      score: number;
+      pet: PetState;
+      foods: FoodItem[];
+    }) => {
+      return petApi.claimMinigameReward(score, pet, foods);
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData(PET_QUERY_KEY, result.pet);
+      queryClient.setQueryData(FOODS_QUERY_KEY, result.foods);
+      setPet(result.pet);
+    },
+  });
+};
+
+export const useClaimAfkMutation = () => {
+  const queryClient = useQueryClient();
+  const { setPet, setAfkAdventure } = usePetStore();
+
+  return useMutation({
+    mutationFn: async ({
+      pet,
+      foods,
+      afkData,
+    }: {
+      pet: PetState;
+      foods: FoodItem[];
+      afkData: AfkAdventureData;
+    }) => {
+      return petApi.claimAfkReward(pet, foods, afkData);
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData(PET_QUERY_KEY, result.pet);
+      queryClient.setQueryData(FOODS_QUERY_KEY, result.foods);
+      setPet(result.pet);
+      setAfkAdventure(null);
     },
   });
 };

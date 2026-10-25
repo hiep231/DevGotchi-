@@ -12,12 +12,16 @@ import {
   Timer,
   Sparkles,
   Share2,
+  Gamepad2,
+  AlertTriangle,
 } from 'lucide-react';
 import { usePetStore } from '../store/usePetStore';
 import { STARTER_PETS } from '../data/petConfigs';
 import { PetCanvas, MASCOT_IMAGES } from './3d/PetCanvas';
 import { FoodTray } from './FoodTray';
 import { PomodoroTimer } from './PomodoroTimer';
+import { CatchBugGame } from './minigame/CatchBugGame';
+import { AfkAdventureModal } from './afk/AfkAdventureModal';
 import { useResetPetMutation } from '../hooks/usePetQueries';
 import { tg } from '../utils/telegram';
 import { petApi } from '../api/petApi';
@@ -54,7 +58,7 @@ const ROLE_THEMES: Record<PetType, RoleTheme> = {
   },
 };
 
-type ActiveTab = 'PET' | 'FOCUS' | 'FOOD';
+type ActiveTab = 'PET' | 'GAME' | 'FOCUS' | 'FOOD';
 
 export const PetDashboard: React.FC = () => {
   const resetMutation = useResetPetMutation();
@@ -67,10 +71,13 @@ export const PetDashboard: React.FC = () => {
     pokePet,
     setMood,
     toggleSleep,
+    afkAdventure,
+    setAfkAdventure,
   } = usePetStore();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('PET');
   const [showStudio, setShowStudio] = useState<boolean>(false);
+  const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const lastPokeTimeRef = useRef<number>(0);
   const [speechQuote, setSpeechQuote] = useState<string>(() =>
@@ -203,6 +210,12 @@ export const PetDashboard: React.FC = () => {
   };
 
   const handleResetPet = () => {
+    tg.haptic.notification('warning');
+    setShowResetConfirm(true);
+  };
+
+  const handleConfirmReset = () => {
+    setShowResetConfirm(false);
     tg.haptic.impact('heavy');
     resetMutation.mutate();
   };
@@ -465,6 +478,37 @@ export const PetDashboard: React.FC = () => {
               </button>
             </div>
 
+            {/* Quick Mini-game 30s Banner */}
+            <div
+              onClick={() => {
+                tg.haptic.impact('medium');
+                setActiveTab('GAME');
+              }}
+              className="w-full mt-3 p-3 rounded-2xl bg-gradient-to-r from-amber-100 via-rose-100 to-pink-100 border-2 border-[var(--ink)] shadow-[0_3px_0_var(--ink)] flex items-center justify-between cursor-pointer active:translate-y-[1px] active:shadow-[0_1.5px_0_var(--ink)] hover:border-[var(--primary-deep)] transition-all select-none"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[var(--primary)] border-2 border-[var(--ink)] flex items-center justify-center text-xl shadow-[0_2px_0_var(--ink)] animate-bounce shrink-0">
+                  🎮
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-heading font-black text-[var(--ink)]">
+                      Bắt Bug Xả Stress
+                    </span>
+                    <span className="text-[9px] font-heading font-black bg-rose-500 text-white px-1.5 py-0.2 rounded-full shadow-xs">
+                      30s
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[var(--ink-soft)] font-medium line-clamp-1">
+                    Nhặt Thạch Docker & Bánh Cá RAM tức thì!
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs font-heading font-black px-2.5 py-1 rounded-xl bg-white border border-[var(--ink)] text-[var(--ink)] shadow-xs shrink-0">
+                Chơi 🕹️
+              </span>
+            </div>
+
             {/* Two Horizontal Vitals Chips (No & Vui with Mini 8px Bar) */}
             <div className="w-full grid grid-cols-2 gap-3 mt-3">
               {/* No Bụng Chip */}
@@ -506,6 +550,12 @@ export const PetDashboard: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'GAME' && (
+          <div className="animate-pop-in">
+            <CatchBugGame onBackToPet={() => setActiveTab('PET')} />
+          </div>
+        )}
+
         {activeTab === 'FOCUS' && (
           <div className="animate-pop-in">
             <PomodoroTimer />
@@ -522,21 +572,38 @@ export const PetDashboard: React.FC = () => {
       {/* ===================================================================
           4.4 THANH ĐIỀU HƯỚNG DƯỚI (White Sticker Bar with Chunky Sliding Pill)
           =================================================================== */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t-2 border-[var(--ink)] rounded-t-[24px] px-4 py-2.5 shadow-[0_-4px_16px_rgba(45,42,74,0.06)] z-50 flex items-center justify-around">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t-2 border-[var(--ink)] rounded-t-[24px] px-3 py-2 shadow-[0_-4px_16px_rgba(45,42,74,0.06)] z-50 flex items-center justify-between gap-1">
         <button
           onClick={() => {
             tg.haptic.selection();
             setActiveTab('PET');
           }}
-          className={`cursor-pointer transition-all duration-200 select-none ${
+          className={`cursor-pointer transition-all duration-200 select-none flex-1 flex items-center justify-center ${
             activeTab === 'PET'
-              ? 'btn-chunky btn-chunky-primary px-4 py-2 flex items-center gap-2 shadow-[0_3px_0_var(--ink)]'
-              : 'p-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
+              ? 'btn-chunky btn-chunky-primary py-2 px-2 gap-1.5 shadow-[0_2.5px_0_var(--ink)]'
+              : 'py-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
           <Smile className={`w-5 h-5 ${activeTab === 'PET' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
-          <span className="font-heading font-extrabold text-xs">
+          <span className="font-heading font-extrabold text-[11px] whitespace-nowrap">
             {activeTab === 'PET' ? 'Linh Thú' : ''}
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            tg.haptic.selection();
+            setActiveTab('GAME');
+          }}
+          className={`cursor-pointer transition-all duration-200 select-none flex-1 flex items-center justify-center ${
+            activeTab === 'GAME'
+              ? 'btn-chunky btn-chunky-primary py-2 px-2 gap-1.5 shadow-[0_2.5px_0_var(--ink)]'
+              : 'py-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
+          }`}
+        >
+          <Gamepad2 className={`w-5 h-5 ${activeTab === 'GAME' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="font-heading font-extrabold text-[11px] whitespace-nowrap">
+            {activeTab === 'GAME' ? 'Bắt Bug' : ''}
           </span>
         </button>
 
@@ -545,15 +612,15 @@ export const PetDashboard: React.FC = () => {
             tg.haptic.selection();
             setActiveTab('FOCUS');
           }}
-          className={`cursor-pointer transition-all duration-200 select-none ${
+          className={`cursor-pointer transition-all duration-200 select-none flex-1 flex items-center justify-center ${
             activeTab === 'FOCUS'
-              ? 'btn-chunky btn-chunky-primary px-4 py-2 flex items-center gap-2 shadow-[0_3px_0_var(--ink)]'
-              : 'p-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
+              ? 'btn-chunky btn-chunky-primary py-2 px-2 gap-1.5 shadow-[0_2.5px_0_var(--ink)]'
+              : 'py-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
           <Timer className={`w-5 h-5 ${activeTab === 'FOCUS' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
-          <span className="font-heading font-extrabold text-xs">
-            {activeTab === 'FOCUS' ? 'Pomodoro' : ''}
+          <span className="font-heading font-extrabold text-[11px] whitespace-nowrap">
+            {activeTab === 'FOCUS' ? 'Focus' : ''}
           </span>
         </button>
 
@@ -562,15 +629,15 @@ export const PetDashboard: React.FC = () => {
             tg.haptic.selection();
             setActiveTab('FOOD');
           }}
-          className={`cursor-pointer transition-all duration-200 select-none ${
+          className={`cursor-pointer transition-all duration-200 select-none flex-1 flex items-center justify-center ${
             activeTab === 'FOOD'
-              ? 'btn-chunky btn-chunky-primary px-4 py-2 flex items-center gap-2 shadow-[0_3px_0_var(--ink)]'
-              : 'p-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
+              ? 'btn-chunky btn-chunky-primary py-2 px-2 gap-1.5 shadow-[0_2.5px_0_var(--ink)]'
+              : 'py-2 flex flex-col items-center text-[var(--ink-soft)] hover:text-[var(--ink)]'
           }`}
         >
           <Utensils className={`w-5 h-5 ${activeTab === 'FOOD' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
-          <span className="font-heading font-extrabold text-xs">
-            {activeTab === 'FOOD' ? 'Túi Đồ Ăn' : ''}
+          <span className="font-heading font-extrabold text-[11px] whitespace-nowrap">
+            {activeTab === 'FOOD' ? 'Túi Đồ' : ''}
           </span>
         </button>
       </nav>
@@ -582,6 +649,69 @@ export const PetDashboard: React.FC = () => {
           type="reward"
           isOpen={!!shareToast}
           onClose={() => setShareToast(null)}
+        />
+      )}
+
+      {/* ===================================================================
+          RESET PET CONFIRMATION MODAL
+          =================================================================== */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="card-sticker bg-white max-w-[320px] w-full p-5 flex flex-col items-center text-center gap-3 animate-pop-in shadow-[0_8px_24px_rgba(45,42,74,0.18)]">
+            {/* Warning Mascot / Icon */}
+            <div className="w-14 h-14 rounded-3xl bg-amber-100 border-2 border-[var(--ink)] shadow-[0_3px_0_var(--ink)] flex items-center justify-center animate-bounce">
+              <AlertTriangle className="w-7 h-7 text-amber-600 stroke-[2.5px]" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-heading font-black text-[var(--ink)]">
+                Đổi thú cưng khác?
+              </h3>
+              <p className="text-xs text-[var(--ink-soft)] font-medium leading-relaxed">
+                Bạn có chắc muốn chia tay bé <b>{pet.customName}</b> (Level {pet.level}) để nhận nuôi thú cưng khác không? Toàn bộ chỉ số sẽ được đặt lại.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="w-full flex items-center gap-2 mt-2">
+              <button
+                onClick={() => {
+                  tg.haptic.selection();
+                  setShowResetConfirm(false);
+                }}
+                className="flex-1 py-2.5 px-3 rounded-2xl border-2 border-[var(--ink)] bg-white text-xs font-heading font-black text-[var(--ink)] shadow-[0_2.5px_0_var(--ink)] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Heart className="w-3.5 h-3.5 fill-[var(--coral-deep)] text-[var(--coral-deep)]" />
+                <span>Giữ lại bé</span>
+              </button>
+
+              <button
+                onClick={handleConfirmReset}
+                disabled={resetMutation.isPending}
+                className="flex-1 py-2.5 px-3 rounded-2xl border-2 border-[var(--ink)] bg-[var(--coral)] text-xs font-heading font-black text-white shadow-[0_2.5px_0_var(--ink)] active:translate-y-[1px] active:shadow-none hover:bg-[var(--coral-deep)] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {resetMutation.isPending ? (
+                  <span>Đang đổi...</span>
+                ) : (
+                  <>
+                    <RotateCcw className="w-3.5 h-3.5 stroke-[2.5px]" />
+                    <span>Đồng ý đổi</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
+          AFK ADVENTURE OFFLINE REWARD MODAL
+          =================================================================== */}
+      {afkAdventure && pet && (
+        <AfkAdventureModal
+          afkData={afkAdventure}
+          pet={pet}
+          onClose={() => setAfkAdventure(null)}
         />
       )}
     </div>

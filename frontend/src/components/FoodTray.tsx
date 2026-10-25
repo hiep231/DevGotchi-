@@ -346,7 +346,9 @@ export const FoodTray: React.FC = () => {
           <h2 className="text-lg font-heading font-black text-[var(--ink)] tracking-tight flex items-center gap-2">
             <span>Túi thức ăn</span>
             <span className="text-xs font-heading font-extrabold px-2 py-0.5 rounded-full bg-[var(--primary-tint)] text-[var(--ink)] border border-[#E09A00]/40">
-              {filteredFoods.reduce((acc, f) => acc + f.count, 0)} món có sẵn
+              {filteredFoods
+                .filter((f) => f.id !== 'water' && !f.isInfinite)
+                .reduce((acc, f) => acc + f.count, 0)} phần trong túi
             </span>
           </h2>
           <span className="text-[11px] font-semibold text-[var(--ink-soft)]">

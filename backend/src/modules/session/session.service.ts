@@ -4,7 +4,20 @@ import { CompleteSessionDto } from './dto/complete-session.dto';
 import { PetService } from '../pet/pet.service';
 import { PetTypeEnum } from '../pet/dto/adopt-pet.dto';
 
-const FOOD_DROPS = ['shrimp', 'fish_ram', 'docker_jelly', 'coffee_donut'];
+const FOOD_NAMES_MAP: Record<string, string> = {
+  golden_apple: '🍎 Táo Vàng Hackathon',
+  coffee_donut: '🍩 Donut Espresso',
+  docker_jelly: '🐳 Thạch Docker',
+  fish_ram: '🐟 Bánh Cá RAM',
+  shrimp: '🦐 Tôm Debug',
+  bao: '🥟 Bánh Bao Bug',
+  noodle_cup: '🍜 Mì Ly Terminal',
+  pizza: '🍕 Pizza Deadline',
+  banh_mi: '🥖 Bánh Mì Sài Gòn',
+  bubble_tea: '🧋 Trà Sữa Sét',
+  onigiri: '🍙 Cơm Nắm Git',
+  ice_cream: '🍦 Kem Ốc Quế CSS',
+};
 
 @Injectable()
 export class SessionService {
@@ -53,7 +66,39 @@ export class SessionService {
       leveledUp = true;
     }
 
-    const droppedFood = FOOD_DROPS[Math.floor(Math.random() * FOOD_DROPS.length)];
+    // Phase 4 Loot Table: Pomodoro as Expedition for High-tier & Legendary foods
+    let droppedFood = 'shrimp';
+    let foodTier: 'COMMON' | 'GOURMET' | 'RARE' | 'LEGENDARY' = 'COMMON';
+
+    if (dto.durationMinutes >= 45) {
+      // Deep Work Expedition: Guaranteed High Tier or Legendary!
+      const deepWorkDrops = ['golden_apple', 'coffee_donut', 'docker_jelly'];
+      droppedFood = deepWorkDrops[Math.floor(Math.random() * deepWorkDrops.length)];
+      foodTier = droppedFood === 'golden_apple' ? 'LEGENDARY' : 'RARE';
+    } else if (dto.durationMinutes >= 25) {
+      // 25m Focus Expedition: 45% chance of High Tier / Legendary, 55% Gourmet
+      const rand = Math.random();
+      if (rand < 0.20) {
+        droppedFood = 'golden_apple'; // Táo vàng Hackathon (+40 EXP, +40 💖, +30 ⚡)
+        foodTier = 'LEGENDARY';
+      } else if (rand < 0.50) {
+        droppedFood = Math.random() > 0.5 ? 'coffee_donut' : 'docker_jelly';
+        foodTier = 'RARE';
+      } else {
+        const gourmetDrops = ['bao', 'noodle_cup', 'pizza', 'fish_ram'];
+        droppedFood = gourmetDrops[Math.floor(Math.random() * gourmetDrops.length)];
+        foodTier = 'GOURMET';
+      }
+    } else {
+      // Short focus (< 25m)
+      const lightDrops = ['shrimp', 'fish_ram', 'bao'];
+      droppedFood = lightDrops[Math.floor(Math.random() * lightDrops.length)];
+      foodTier = 'COMMON';
+    }
+
+    // Pomodoro does not drain pet brutally anymore!
+    // Energy gains +5, and Happiness increases +20!
+    const newEnergy = Math.min(100, pet.energy + 5);
 
     const updatedPet = await this.prisma.pet.update({
       where: { id: pet.id },
@@ -62,8 +107,8 @@ export class SessionService {
         exp: newExp,
         maxExp: newMaxExp,
         totalFocusMinutes: pet.totalFocusMinutes + dto.durationMinutes,
-        energy: Math.max(10, pet.energy - 10),
-        happiness: Math.min(100, pet.happiness + 15),
+        energy: newEnergy,
+        happiness: Math.min(100, pet.happiness + 20),
         mood: 'HAPPY',
       },
     });
@@ -95,6 +140,8 @@ export class SessionService {
       },
     });
 
+    const droppedFoodName = FOOD_NAMES_MAP[droppedFood] || droppedFood;
+
     return {
       success: true,
       data: {
@@ -102,9 +149,11 @@ export class SessionService {
         expGained,
         leveledUp,
         droppedFood,
+        droppedFoodName,
+        foodTier,
         message: leveledUp
-          ? `🎉 Chúc mừng! Bé pet đã lên cấp ${newLevel} và nhận rương đồ ăn!`
-          : `Tuyệt vời! Hoàn thành ${dto.durationMinutes} phút tập trung (#${dto.tag})!`,
+          ? `🎉 Chúc mừng! Bé pet đã lên cấp ${newLevel} và nhặt được ${droppedFoodName}!`
+          : `Tuyệt vời! Hoàn thành ${dto.durationMinutes} phút tập trung (#${dto.tag}), nhặt được ${droppedFoodName}!`,
       },
     };
   }

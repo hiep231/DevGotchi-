@@ -6,23 +6,78 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('PetService', () => {
   let service: PetService;
+  let currentPet: any = null;
+
+  const mockPrisma = {
+    user: {
+      upsert: jest.fn().mockImplementation(async () => ({
+        id: 'user_1',
+        telegramId: BigInt(123456),
+        username: 'user_123456',
+        pet: currentPet,
+      })),
+      findUnique: jest.fn().mockImplementation(async () => {
+        if (!currentPet) return null;
+        return {
+          id: 'user_1',
+          telegramId: BigInt(123456),
+          username: 'user_123456',
+          pet: currentPet,
+          inventory: [{ foodId: 'shrimp', count: 5 }],
+        };
+      }),
+      update: jest.fn().mockResolvedValue({ id: 'user_1' }),
+    },
+    pet: {
+      upsert: jest.fn().mockImplementation(async ({ create }) => {
+        currentPet = {
+          id: 'pet_1',
+          userId: 'user_1',
+          type: create.type,
+          name: create.name,
+          level: 1,
+          exp: 0,
+          maxExp: 100,
+          hunger: 70,
+          energy: 85,
+          happiness: 90,
+          streak: 1,
+          totalFocusMinutes: 0,
+          lastFedAt: new Date(),
+        };
+        return currentPet;
+      }),
+      update: jest.fn().mockImplementation(async ({ data }) => {
+        currentPet = { ...currentPet, ...data };
+        return currentPet;
+      }),
+      delete: jest.fn().mockImplementation(async () => {
+        currentPet = null;
+        return null;
+      }),
+    },
+    inventoryItem: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'inv_1', foodId: 'shrimp', count: 5 }),
+      findUnique: jest.fn().mockResolvedValue({ id: 'inv_1', foodId: 'shrimp', count: 5 }),
+      update: jest.fn().mockResolvedValue({ id: 'inv_1', foodId: 'shrimp', count: 4 }),
+      upsert: jest.fn().mockResolvedValue({ id: 'inv_1', foodId: 'shrimp', count: 1 }),
+    },
+    $transaction: jest.fn().mockImplementation(async (promises) => Promise.all(promises)),
+  };
 
   beforeEach(async () => {
+    currentPet = null;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PetService,
         {
           provide: PrismaService,
-          useValue: {
-            pet: null,
-            user: null,
-          },
+          useValue: mockPrisma,
         },
       ],
     }).compile();
 
     service = module.get<PetService>(PetService);
-    await service.resetPet();
   });
 
   it('should be defined', () => {
@@ -59,7 +114,7 @@ describe('PetService', () => {
   });
 
   it('should throw NotFoundException if feeding with no adopted pet', async () => {
-    await service.resetPet();
+    currentPet = null;
     await expect(service.feedPet({ foodId: 'shrimp' })).rejects.toThrow(NotFoundException);
   });
 });

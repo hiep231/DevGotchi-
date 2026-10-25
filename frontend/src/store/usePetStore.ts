@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { FoodItem, PetMood, PetState, PetType } from '../types/pet';
+import { AfkAdventureData, FoodItem, PetMood, PetState, PetType } from '../types/pet';
 import { INITIAL_FOODS, STARTER_PETS } from '../data/petConfigs';
 
 interface PetStore {
@@ -10,9 +10,11 @@ interface PetStore {
   activeFoodFeeding: FoodItem | null;
   feedAnimKey: number;
   pokeAnimKey: number;
+  afkAdventure: AfkAdventureData | null;
 
   // Actions
   setPet: (pet: PetState | null) => void;
+  setAfkAdventure: (afk: AfkAdventureData | null) => void;
   setSelectedStarter: (id: PetType) => void;
   adoptPet: (type: PetType, customName: string) => void;
   feedPet: (foodId: string) => boolean;
@@ -86,6 +88,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
   activeFoodFeeding: null,
   feedAnimKey: 0,
   pokeAnimKey: 0,
+  afkAdventure: null,
 
   setPet: (pet: PetState | null) => {
     if (pet) {
@@ -99,6 +102,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
     }
     set({ pet });
   },
+
+  setAfkAdventure: (afk: AfkAdventureData | null) => set({ afkAdventure: afk }),
 
   setSelectedStarter: (id: PetType) => set({ selectedStarterId: id }),
 
@@ -262,13 +267,33 @@ export const usePetStore = create<PetStore>((set, get) => ({
       leveledUp = true;
     }
 
-    // Award food drop!
-    const randomFoodIndex = Math.floor(Math.random() * foods.length);
+    // Award food drop with Expedition loot table
+    let droppedFoodId = 'fish_ram';
+    if (minutes >= 45) {
+      const legendPool = ['golden_apple', 'coffee_donut', 'docker_jelly'];
+      droppedFoodId = legendPool[Math.floor(Math.random() * legendPool.length)];
+    } else if (minutes >= 25) {
+      const isHighTier = Math.random() < 0.45;
+      if (isHighTier) {
+        const pool = ['golden_apple', 'coffee_donut', 'docker_jelly'];
+        droppedFoodId = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        const pool = ['bao', 'noodle_cup', 'pizza', 'fish_ram'];
+        droppedFoodId = pool[Math.floor(Math.random() * pool.length)];
+      }
+    } else {
+      const pool = ['shrimp', 'fish_ram', 'bao'];
+      droppedFoodId = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    const foodIdx = foods.findIndex((f) => f.id === droppedFoodId);
     const updatedFoods = [...foods];
-    updatedFoods[randomFoodIndex] = {
-      ...updatedFoods[randomFoodIndex],
-      count: updatedFoods[randomFoodIndex].count + (leveledUp ? 3 : 1),
-    };
+    if (foodIdx !== -1) {
+      updatedFoods[foodIdx] = {
+        ...updatedFoods[foodIdx],
+        count: updatedFoods[foodIdx].count + (leveledUp ? 3 : 1),
+      };
+    }
 
     const updatedPet: PetState = {
       ...pet,
@@ -276,8 +301,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
       exp: newExp,
       maxExp: newMaxExp,
       totalFocusMinutes: pet.totalFocusMinutes + minutes,
-      energy: Math.max(10, pet.energy - 10),
-      happiness: Math.min(100, pet.happiness + 15),
+      energy: Math.min(100, pet.energy + 5),
+      happiness: Math.min(100, pet.happiness + 20),
       mood: 'HAPPY',
     };
 

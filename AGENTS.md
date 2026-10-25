@@ -74,15 +74,45 @@ Welcome to the **DevGotchi** codebase! All agents, developers, and tools working
 * **Focus Sessions:** 25m Focus = 100 Base EXP (with Starter Passive Perks applied).
 * **Level Progression:** Level 1 -> 2 = 100 EXP; $\text{maxExp} = \text{round}(\text{prevMaxExp} \times 1.35)$.
 * **Vitals & Decay:**
-  * `Hunger` (0–100): Decreases 5 points every 2 hours without sessions.
-  * `Energy` (0–100): Restored by sleeping (`toggleSleep`) or rest periods.
-  * `Happiness` (0–100): Boosted by feeding favorite foods (+15 bonus) and petting/poking (+3).
+  * `Hunger` (0–100): Decreases 5 points every **2.4 hours** (exactly 48 hours from 100 to 0).
+  * `Energy` (0–100): Restored by sleeping (`/sleep` or `toggleSleep`), Pomodoro breaks (+15), feeding (+5 to +25), and daily `/checkin` (100% full recharge).
+  * `Happiness` (0–100): Boosted by feeding favorite foods (+15 bonus), petting/poking (+3), and winning mini-games (+10 to +25).
+* **Food Survival Tier:** `water` (Nước Lọc Dev) is 100% free and infinite. Never blocks pet survival.
 
 ---
 
 ## 🛠️ 6. Verified Development Commands
 
 * `npm run dev`: Launch Vite frontend dev server (`http://localhost:5173`).
-* `npm run dev:backend`: Launch NestJS backend dev server (`http://localhost:3000/api`).
-* `npm run build`: Verify production builds for both frontend and backend.
-* Always ensure `npm run build:frontend` exits with code 0 before completing any task.
+* `npm run dev:backend`: Launch NestJS backend dev server (`http://localhost:3001/api`).
+* `npm run build:frontend`: Verify production build for frontend.
+* `npm run build:backend`: Verify production build for backend.
+* Always ensure both frontend and backend builds exit with code 0 before completing any task.
+
+---
+
+## 🛑 7. Strict Git & Commit Policy
+
+* **GOLDEN RULE: NEVER COMMIT OR PUSH AUTOMATICALLY.**
+* The agent must **NEVER** execute `git commit` or `git push` unless the user explicitly commands it in the chat prompt (e.g. *"commit cho tôi"*, *"hãy commit code"*).
+* All work must remain in the working directory for user testing and verification.
+
+---
+
+## 📚 8. Workspace Customization System
+
+* **Rules (`.agents/rules/`):**
+  * `code-quality.md`: Zero-breaking changes, TypeScript strictness, clean state updates.
+  * `mobile-twa.md`: Telegram Web App mobile ergonomics, touch targets $\ge 44\text{px}$, haptic feedback.
+  * `gamification-balance.md`: Vital formulas, decay intervals, loot tables.
+  * `git-workflow.md`: Strict no auto-commit rule and Conventional Commits standards.
+* **Specialized Skills (`.agents/skills/`):**
+  * `system-analysis`: Phân tích yêu cầu, đánh giá tác động kiến trúc và cân bằng game.
+  * `code-review`: Review code, kiểm tra memory leak, bảo mật, và anti-slop visual.
+  * `qa-testing`: Kiểm thử toàn diện frontend, backend, mini-game, và Telegram bot.
+  * `database-migration`: Quản lý schema Prisma, Supabase PostgreSQL và bảo toàn dữ liệu.
+  * `telegram-playful-ui`: Chuẩn thiết kế Candy Claymorphism cho Telegram Mini App.
+  * `backend-api-pipeline`: Xây dựng module NestJS, DTO validation, AI Speech endpoint.
+  * `pet-3d-creation`: Thiết kế procedural 3D pet Three.js đạt chuẩn 60 FPS.
+  * `pomodoro-gamification`: Cân bằng Pomodoro, EXP, drop rate và streak.
+

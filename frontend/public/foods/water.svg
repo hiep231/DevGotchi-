@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Ground Shadow -->
+  <ellipse cx="64" cy="118" rx="36" ry="5" fill="#1B2A4A" opacity=".14"/>
+  
+  <g transform="rotate(3 64 64)">
+    <!-- Straw -->
+    <path d="M68 32 L84 8" fill="none" stroke="#1B2A4A" stroke-width="8" stroke-linecap="round"/>
+    <path d="M68 32 L84 8" fill="none" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Glass Shape Definition for Clip -->
+    <clipPath id="glassClip">
+      <path d="M38 42 L90 42 L84 114 L44 114 Z"/>
+    </clipPath>
+
+    <!-- Water Base Fill -->
+    <path d="M38 42 L90 42 L84 114 L44 114 Z" fill="#E0F2FE"/>
+
+    <!-- Water Liquid Fill -->
+    <g clip-path="url(#glassClip)">
+      <!-- Liquid Background -->
+      <path d="M36 54 Q64 48 92 54 L84 116 L44 116 Z" fill="#38BDF8"/>
+      <!-- Liquid Shading Tone -->
+      <ellipse cx="64" cy="120" rx="45" ry="30" fill="#0284C7"/>
+      <!-- Ice Cubes inside -->
+      <rect x="46" y="58" width="16" height="16" rx="4" fill="#BAE6FD" opacity="0.85" stroke="#FFFFFF" stroke-width="1.5" transform="rotate(-10 54 66)"/>
+      <rect x="66" y="66" width="14" height="14" rx="3" fill="#BAE6FD" opacity="0.85" stroke="#FFFFFF" stroke-width="1.5" transform="rotate(15 73 73)"/>
+      <!-- Water Waves / Reflections -->
+      <path d="M42 54 Q64 48 86 54" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+      <!-- White Bubbles -->
+      <circle cx="50" cy="98" r="3" fill="#FFFFFF" opacity="0.7"/>
+      <circle cx="74" cy="92" r="2.5" fill="#FFFFFF" opacity="0.7"/>
+      <circle cx="60" cy="104" r="2" fill="#FFFFFF" opacity="0.7"/>
+    </g>
+
+    <!-- Glass Rim & Outline -->
+    <path d="M38 42 L90 42 L84 114 L44 114 Z" fill="none" stroke="#1B2A4A" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <ellipse cx="64" cy="42" rx="26" ry="6" fill="#F0F9FF" stroke="#1B2A4A" stroke-width="4"/>
+    <ellipse cx="64" cy="42" rx="20" ry="4" fill="#38BDF8" opacity="0.5"/>
+
+    <!-- Glass Highlights / Sheen -->
+    <path d="M44 48 L48 108" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- Cute Kawaii Face on Glass -->
+    <ellipse cx="48" cy="80" rx="4.5" ry="2.6" fill="#F472B6" opacity=".8"/>
+    <ellipse cx="80" cy="80" rx="4.5" ry="2.6" fill="#F472B6" opacity=".8"/>
+    <circle cx="54" cy="76" r="3" fill="#1B2A4A"/>
+    <circle cx="55" cy="75" r="1" fill="#FFFFFF"/>
+    <circle cx="74" cy="76" r="3" fill="#1B2A4A"/>
+    <circle cx="75" cy="75" r="1" fill="#FFFFFF"/>
+    <path d="M60 80 Q64 85 68 80" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Sparkle & Water Drops outside -->
+    <path d="M96 38 Q99 38 100 35 Q101 38 104 38 Q101 38 100 41 Q99 38 96 38 Z" fill="#38BDF8"/>
+    <path d="M30 46 C28 42 32 38 33 42 C34 44 32 46 30 46 Z" fill="#0284C7"/>
+  </g>
+</svg>

@@ -238,7 +238,50 @@ export const EspressoDonutIcon: React.FC<FoodIconProps> = ({ className = '', siz
   </svg>
 );
 
+/**
+ * 💧 Nước Lọc Dev (Dev Water Cup)
+ * Crisp kawaii water glass with ice cubes, straw, and water drops.
+ */
+export const DevWaterIcon: React.FC<FoodIconProps> = ({ className = '', size = 56 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 64 64"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    {/* Straw */}
+    <path d="M34 16 L42 4" stroke="#2D2A4A" strokeWidth="4" strokeLinecap="round" />
+    <path d="M34 16 L42 4" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" />
+    {/* Glass Cup Body */}
+    <path
+      d="M19 21 L45 21 L42 57 L22 57 Z"
+      fill="#E0F2FE"
+      stroke="#2D2A4A"
+      strokeWidth="2.5"
+      strokeLinejoin="round"
+    />
+    {/* Blue Liquid Fill */}
+    <path
+      d="M20 27 Q32 24 44 27 L41.5 56 L22.5 56 Z"
+      fill="#38BDF8"
+    />
+    {/* Ice Cube */}
+    <rect x="25" y="30" width="8" height="8" rx="2" fill="#BAE6FD" opacity="0.9" stroke="#FFFFFF" strokeWidth="1" />
+    {/* Rim */}
+    <ellipse cx="32" cy="21" rx="13" ry="3" fill="#F0F9FF" stroke="#2D2A4A" strokeWidth="2.5" />
+    {/* Kawaii Face */}
+    <circle cx="28" cy="42" r="1.8" fill="#2D2A4A" />
+    <circle cx="36" cy="42" r="1.8" fill="#2D2A4A" />
+    <path d="M30 45 Q32 47 34 45" stroke="#2D2A4A" strokeWidth="1.5" strokeLinecap="round" />
+    <ellipse cx="25" cy="44" rx="2" ry="1.2" fill="#F472B6" opacity="0.8" />
+    <ellipse cx="39" cy="44" rx="2" ry="1.2" fill="#F472B6" opacity="0.8" />
+  </svg>
+);
+
 export const FOOD_ICON_MAP: Record<string, React.FC<FoodIconProps>> = {
+  water: DevWaterIcon,
   shrimp: ShrimpDebugIcon,
   fish_ram: RamFishIcon,
   docker_jelly: DockerJellyIcon,
@@ -246,6 +289,7 @@ export const FOOD_ICON_MAP: Record<string, React.FC<FoodIconProps>> = {
 };
 
 export const FOOD_IMAGES: Record<string, string> = {
+  water: '/foods/water.svg',
   shrimp: '/foods/shrimp.svg',
   fish_ram: '/foods/fish_ram.svg',
   docker_jelly: '/foods/docker_jelly.svg',

@@ -49,6 +49,8 @@ export interface FoodItem {
   color: string;
   hungerRestored: number;
   happinessBonus: number;
+  energyBonus?: number;
+  isInfinite?: boolean;
   description: string;
   count: number;
 }

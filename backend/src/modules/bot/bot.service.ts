@@ -605,6 +605,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const getCount = (id: string) => inventory.find((i) => i.foodId === id)?.count ?? 0;
 
       const foods = [
+        { id: 'water', name: '💧 Nước Lọc Dev (Miễn phí ∞)' },
         { id: 'shrimp', name: `🦐 Tôm Debug (Còn x${getCount('shrimp')})` },
         { id: 'fish_ram', name: `🐟 Bánh Cá RAM (Còn x${getCount('fish_ram')})` },
         { id: 'docker_jelly', name: `🐳 Thạch Docker (Còn x${getCount('docker_jelly')})` },
@@ -664,12 +665,12 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       };
 
       const ownedItems = inventory.filter((i) => i.count > 0);
-      let itemsListText = '';
+      let itemsListText = '• 💧 <b>Nước Lọc Dev</b>: x<b>∞ (Vô hạn, Miễn phí)</b>\n  <i>(+10 No, +5 Hạnh phúc, +5 ⚡ Năng lượng)</i>\n\n';
 
       if (ownedItems.length === 0) {
-        itemsListText = '<i>Túi đồ của bạn hiện đang trống! Hãy điểm danh hoặc làm Pomodoro để kiếm thêm thức ăn nhé.</i>\n';
+        itemsListText += '<i>Các món ăn khác trong túi tạm thời đã hết! Hãy điểm danh hoặc làm Pomodoro để kiếm thêm sơn hào hải vị nhé.</i>\n';
       } else {
-        itemsListText = ownedItems
+        itemsListText += ownedItems
           .map((i) => {
             const info = foodNames[i.foodId] || { name: `🍱 ${i.foodId}`, desc: '+20 No' };
             return `• <b>${info.name}</b>: x<b>${i.count} phần</b>\n  <i>(${info.desc})</i>`;
@@ -723,7 +724,38 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      // 2. Check and consume inventory item
+      // 2. Water logic (Infinite free tier survival food)
+      if (foodId === 'water') {
+        const newHunger = Math.min(100, user.pet.hunger + 10);
+        const newHappy = Math.min(100, user.pet.happiness + 5);
+        const newEnergy = Math.min(100, user.pet.energy + 5);
+
+        await this.prisma.pet.update({
+          where: { id: user.pet.id },
+          data: {
+            hunger: newHunger,
+            happiness: newHappy,
+            energy: newEnergy,
+            lastFedAt: new Date(),
+          },
+        });
+
+        await ctx.answerCbQuery('💧 Nước lọc mát rượi!');
+        const emoji = PET_EMOJIS[user.pet.type] || '🐾';
+
+        await ctx.reply(
+          `${emoji} <b>${user.pet.name} đã uống một cốc Nước Lọc Dev mát lành!</b>\n` +
+          `🍖 No bụng: <b>${newHunger}/100</b> (+10)\n` +
+          `⚡ Năng lượng: <b>${newEnergy}/100</b> (+5)\n` +
+          `💖 Hạnh phúc: <b>${newHappy}/100</b> (+5)\n` +
+          `💧 Nguồn nước sạch miễn phí vô hạn (x∞) luôn sẵn sàng!\n` +
+          `💬 <i>"Đã khát quá sen ơi! Uống đủ nước là code bug nào cũng bay màu! Sen cũng nhớ uống nước nhé 🥤"</i>`,
+          { parse_mode: 'HTML' },
+        );
+        return;
+      }
+
+      // 3. Check and consume inventory item
       const item = user.inventory.find((i) => i.foodId === foodId);
       if (!item || item.count <= 0) {
         await ctx.answerCbQuery('Món này đã hết!');

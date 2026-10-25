@@ -44,8 +44,11 @@ export const petApi = {
       if (res.ok) {
         const json = await res.json();
         if (json.data) {
-          localStorage.setItem(getFoodStorageKey(), JSON.stringify(json.data));
-          return json.data;
+          const mapped = json.data.map((f: FoodItem) =>
+            f.id === 'water' ? { ...f, isInfinite: true, count: 999 } : f
+          );
+          localStorage.setItem(getFoodStorageKey(), JSON.stringify(mapped));
+          return mapped;
         }
         return json;
       }
@@ -59,7 +62,9 @@ export const petApi = {
       const parsed: FoodItem[] = JSON.parse(saved);
       return INITIAL_FOODS.map((initFood) => {
         const existing = parsed.find((p) => p.id === initFood.id);
-        return existing ? { ...initFood, count: existing.count } : initFood;
+        return existing
+          ? { ...initFood, count: initFood.isInfinite ? 999 : existing.count }
+          : initFood;
       });
     } catch {
       return INITIAL_FOODS;
@@ -105,23 +110,28 @@ export const petApi = {
   // Feed Pet
   async feedPet(foodId: string, currentPet: PetState, foods: FoodItem[]): Promise<{ pet: PetState; foods: FoodItem[] }> {
     const foodIndex = foods.findIndex((f) => f.id === foodId);
-    if (foodIndex === -1 || foods[foodIndex].count <= 0) {
+    const isInfinite = foodId === 'water' || foods[foodIndex]?.isInfinite;
+    if (foodIndex === -1 || (!isInfinite && foods[foodIndex].count <= 0)) {
       throw new Error('Món ăn đã hết!');
     }
 
     const food = foods[foodIndex];
     const updatedFoods = [...foods];
-    updatedFoods[foodIndex] = { ...food, count: food.count - 1 };
+    if (!isInfinite) {
+      updatedFoods[foodIndex] = { ...food, count: food.count - 1 };
+    }
 
     const config = STARTER_PETS.find((p) => p.id === currentPet.type);
     const isFav = config && config.favoriteFood.toLowerCase().includes(food.name.toLowerCase());
     const hungerGain = isFav ? food.hungerRestored + 15 : food.hungerRestored;
     const happyGain = isFav ? food.happinessBonus + 15 : food.happinessBonus;
+    const energyGain = food.energyBonus ?? (food.id === 'coffee_donut' ? 25 : (food.id === 'fish_ram' ? 15 : 10));
 
     let updatedPet: PetState = {
       ...currentPet,
       hunger: Math.min(100, currentPet.hunger + hungerGain),
       happiness: Math.min(100, currentPet.happiness + happyGain),
+      energy: Math.min(100, (currentPet.energy ?? 85) + energyGain),
       mood: 'HAPPY',
       lastFedAt: new Date().toISOString(),
     };

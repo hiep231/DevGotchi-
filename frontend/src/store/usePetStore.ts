@@ -131,22 +131,27 @@ export const usePetStore = create<PetStore>((set, get) => ({
     if (!pet || isFeeding) return false;
 
     const foodIndex = foods.findIndex((f) => f.id === foodId);
-    if (foodIndex === -1 || foods[foodIndex].count <= 0) return false;
+    const isInfinite = foodId === 'water' || foods[foodIndex]?.isInfinite;
+    if (foodIndex === -1 || (!isInfinite && foods[foodIndex].count <= 0)) return false;
 
     const food = foods[foodIndex];
     const updatedFoods = [...foods];
-    updatedFoods[foodIndex] = { ...food, count: food.count - 1 };
+    if (!isInfinite) {
+      updatedFoods[foodIndex] = { ...food, count: food.count - 1 };
+    }
 
     // Check favorite food bonus
     const config = STARTER_PETS.find((p) => p.id === pet.type);
     const isFav = config && config.favoriteFood.toLowerCase().includes(food.name.toLowerCase());
     const hungerGain = isFav ? food.hungerRestored + 15 : food.hungerRestored;
     const happyGain = isFav ? food.happinessBonus + 15 : food.happinessBonus;
+    const energyGain = food.energyBonus ?? (food.id === 'coffee_donut' ? 25 : (food.id === 'fish_ram' ? 15 : 10));
 
     const updatedPet: PetState = {
       ...pet,
       hunger: Math.min(100, pet.hunger + hungerGain),
       happiness: Math.min(100, pet.happiness + happyGain),
+      energy: Math.min(100, (pet.energy ?? 85) + energyGain),
       mood: 'HAPPY',
       lastFedAt: new Date().toISOString(),
     };

@@ -12,8 +12,9 @@ import { spawnFloatingReaction } from './ui/TapEffectOverlay';
 
 type FoodFilter = 'ALL' | 'FAVORITE' | 'MAIN' | 'SNACK' | 'DRINK';
 
-// Category mapping for the 12 tech foods
+// Category mapping for the 13 tech foods & drinks
 const FOOD_CATEGORIES: Record<string, 'MAIN' | 'SNACK' | 'DRINK'> = {
+  water: 'DRINK',
   shrimp: 'SNACK',
   fish_ram: 'SNACK',
   docker_jelly: 'SNACK',
@@ -30,6 +31,7 @@ const FOOD_CATEGORIES: Record<string, 'MAIN' | 'SNACK' | 'DRINK'> = {
 
 // Background tint palettes for food sticker icon boxes
 const FOOD_TINTS: Record<string, string> = {
+  water: '#E0F2FE',
   shrimp: '#FFEAEA',
   fish_ram: '#FFF8E6',
   docker_jelly: '#EAF8FD',
@@ -353,7 +355,7 @@ export const FoodTray: React.FC = () => {
         </div>
 
         <span className="text-[10px] font-heading font-black text-[var(--ink-soft)] bg-white border border-[var(--line)] px-2 py-0.5 rounded-full shadow-xs">
-          Menu 12 món
+          Menu 13 món
         </span>
       </div>
 
@@ -361,7 +363,8 @@ export const FoodTray: React.FC = () => {
       <div className="grid grid-cols-2 gap-2.5">
         {filteredFoods.map((food) => {
           const isFav = config ? config.favoriteFood.toLowerCase().includes(food.name.toLowerCase()) : false;
-          const isAvailable = food.count > 0;
+          const isInfinite = food.id === 'water' || food.isInfinite;
+          const isAvailable = isInfinite || food.count > 0;
           const isBusy = isFeeding || feedMutation.isPending;
           const IconComponent = FOOD_ICON_MAP[food.id];
           const imageSrc = FOOD_IMAGES[food.id] || `/foods/${food.id}.svg`;
@@ -411,12 +414,14 @@ export const FoodTray: React.FC = () => {
                 {/* ×Count Pill Badge */}
                 <div
                   className={`font-heading font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-[var(--ink)] shadow-[0_1.5px_0_var(--ink)] tabular-nums shrink-0 ${
-                    isAvailable
-                      ? 'bg-[var(--primary)] text-[var(--ink)]'
-                      : 'bg-gray-300 text-gray-600'
+                    isInfinite
+                      ? 'bg-sky-400 text-white shadow-[0_1.5px_0_#0284c7]'
+                      : isAvailable
+                        ? 'bg-[var(--primary)] text-[var(--ink)]'
+                        : 'bg-gray-300 text-gray-600'
                   }`}
                 >
-                  {isAvailable ? `×${food.count}` : 'Hết'}
+                  {isInfinite ? 'FREE ∞' : (isAvailable ? `×${food.count}` : 'Hết')}
                 </div>
               </div>
 
@@ -432,7 +437,7 @@ export const FoodTray: React.FC = () => {
 
               {/* Bottom Row: Nutrition Chips & Feed Action */}
               <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap">
                   {/* +No Bụng Chip */}
                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--mint-tint)] border border-[#1FA396]/30 text-[9px] font-heading font-black text-[var(--mint-deep)]">
                     <Utensils className="w-2.5 h-2.5" />
@@ -444,6 +449,14 @@ export const FoodTray: React.FC = () => {
                     <Heart className="w-2.5 h-2.5 fill-[var(--coral-deep)]" />
                     <span>+{food.happinessBonus}</span>
                   </span>
+
+                  {/* +Năng lượng Chip */}
+                  {food.energyBonus && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-[9px] font-heading font-black text-amber-700">
+                      <Zap className="w-2.5 h-2.5 fill-amber-500" />
+                      <span>+{food.energyBonus}</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Chunky Mini Action Button */}

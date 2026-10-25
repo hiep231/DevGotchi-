@@ -85,6 +85,18 @@ export const STARTER_PETS: PetConfig[] = [
 
 export const INITIAL_FOODS: FoodItem[] = [
   {
+    id: 'water',
+    name: 'Nước Lọc Dev',
+    icon: '💧',
+    color: 'from-sky-400 to-blue-500',
+    hungerRestored: 10,
+    happinessBonus: 5,
+    energyBonus: 5,
+    isInfinite: true,
+    description: 'Nước lọc mát lành miễn phí vô hạn, uống đủ 2 lít mỗi ngày để luôn tràn đầy sinh lực!',
+    count: 999,
+  },
+  {
     id: 'shrimp',
     name: 'Tôm Debug',
     icon: '🦐',

@@ -13,6 +13,17 @@ const FAVORITE_FOOD_MAP: Record<PetTypeEnum, string> = {
 
 export const ALL_FOODS_META = [
   {
+    id: 'water',
+    name: 'Nước Lọc Dev',
+    icon: '💧',
+    color: 'from-sky-400 to-blue-500',
+    hungerRestored: 10,
+    happinessBonus: 5,
+    energyBonus: 5,
+    isInfinite: true,
+    description: 'Nước lọc mát lành miễn phí vô hạn, uống đủ 2 lít mỗi ngày để luôn tràn đầy sinh lực!',
+  },
+  {
     id: 'shrimp',
     name: 'Tôm Debug',
     icon: '🦐',
@@ -204,7 +215,7 @@ export class PetService {
 
       const result = ALL_FOODS_META.map((meta) => ({
         ...meta,
-        count: countMap.get(meta.id) ?? 0,
+        count: meta.id === 'water' ? 999 : (countMap.get(meta.id) ?? 0),
       }));
 
       return { success: true, data: result };
@@ -273,12 +284,6 @@ export class PetService {
       throw new BadRequestException('Bé cưng đã no căng bụng rồi (100/100 🍖)! Không nên ép bé ăn thêm nhé.');
     }
 
-    // 2. Check inventory item count
-    const item = user.inventory.find((i) => i.foodId === dto.foodId);
-    if (!item || item.count <= 0) {
-      throw new BadRequestException('Món ăn này trong túi đồ của bạn đã hết!');
-    }
-
     const foodMeta = ALL_FOODS_META.find((f) => f.id === dto.foodId);
     const hungerRestored = foodMeta?.hungerRestored ?? 25;
     const happinessBonus = foodMeta?.happinessBonus ?? 15;
@@ -291,6 +296,33 @@ export class PetService {
     const newHunger = Math.min(100, pet.hunger + hungerGain);
     const newHappy = Math.min(100, pet.happiness + happyGain);
     const newEnergy = Math.min(100, pet.energy + energyBonus);
+
+    // 2. If drinking water: free & infinite tier, no inventory deduction needed
+    if (dto.foodId === 'water') {
+      const updatedPet = await this.prisma.pet.update({
+        where: { id: pet.id },
+        data: {
+          hunger: newHunger,
+          happiness: newHappy,
+          energy: newEnergy,
+          mood: newHunger > 25 && pet.mood === 'HUNGRY' ? 'HAPPY' : pet.mood,
+          lastFedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        data: updatedPet,
+        remainingCount: 999,
+        message: 'Bé đã uống một cốc nước lọc mát lành (+10 🍖, +5 💖)! Nguồn nước miễn phí luôn sẵn sàng.',
+      };
+    }
+
+    // 3. Regular foods: check and consume inventory item
+    const item = user.inventory.find((i) => i.foodId === dto.foodId);
+    if (!item || item.count <= 0) {
+      throw new BadRequestException('Món ăn này trong túi đồ của bạn đã hết!');
+    }
 
     const [updatedItem, updatedPet] = await this.prisma.$transaction([
       this.prisma.inventoryItem.update({

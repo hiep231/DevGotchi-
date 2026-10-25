@@ -44,16 +44,16 @@ const getInitialPet = (): PetState | null => {
     if (!saved) return null;
     const pet: PetState = JSON.parse(saved);
 
-    // Calculate real-time hunger decay (5 points per 2 hours)
+    // Calculate real-time hunger decay (48 hours to drop 100 points: 5 points per 2.4 hours)
     if (pet.lastFedAt) {
       const diffHours = (Date.now() - new Date(pet.lastFedAt).getTime()) / (1000 * 60 * 60);
-      const intervals = Math.floor(diffHours / 2);
+      const intervals = Math.floor(diffHours / 2.4);
       if (intervals > 0) {
         pet.hunger = Math.max(0, pet.hunger - intervals * 5);
         if (pet.hunger <= 25) {
           pet.mood = 'HUNGRY';
         }
-        pet.lastFedAt = new Date(new Date(pet.lastFedAt).getTime() + intervals * 2 * 60 * 60 * 1000).toISOString();
+        pet.lastFedAt = new Date(new Date(pet.lastFedAt).getTime() + intervals * 2.4 * 60 * 60 * 1000).toISOString();
         localStorage.setItem(getStorageKey(), JSON.stringify(pet));
       }
     }

@@ -58,7 +58,6 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         { command: 'bag', description: '🎒 Xem túi đồ & kho thức ăn sẵn có' },
         { command: 'feed', description: '🍖 Cho thú cưng ăn nạp no bụng' },
         { command: 'sleep', description: '💤 Cho thú cưng đi ngủ sạc đầy Năng lượng (100% ⚡)' },
-        { command: 'game', description: '🎮 Chơi Mini-game 30s bắt bug xả stress & kiếm đồ ăn' },
         { command: 'task', description: '📋 Mở Web Quản Lý Task (PSOI Task)' },
         { command: 'poke', description: '👋 Xoa đầu, cưng nựng bé cưng (+3 💖)' },
         { command: 'focus', description: '⏱️ Pomodoro tập trung (vd: /focus 25 Coding)' },
@@ -137,7 +136,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([
               [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
-              [Markup.button.callback('🎮 Bắt Bug (Mini-Game)', 'pet_game'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
+              [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
               [Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
               [Markup.button.callback('⏱️ Focus 25 phút', 'pet_focus_25'), Markup.button.callback('📖 Trợ Giúp', 'pet_help')],
               [Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
@@ -263,21 +262,8 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.bot.action('pet_game', async (ctx) => {
-      await ctx.answerCbQuery('🎮 Mở Mini-game 30s!');
+      await ctx.answerCbQuery('🎮 Hãy bấm nút "Nuôi Pet 🐾" để chơi nhé!');
       await this.handleGameCommand(ctx);
-    });
-
-    // In-Chat Quick Smash Mini-game actions
-    this.bot.action('quick_smash_start', async (ctx) => {
-      await this.handleQuickSmash(ctx);
-    });
-
-    this.bot.action('quick_smash_hit', async (ctx) => {
-      await this.handleQuickSmashHit(ctx);
-    });
-
-    this.bot.action('quick_smash_miss', async (ctx) => {
-      await ctx.answerCbQuery('😅 Đập trúng code sạch rồi, hãy tìm con bọ nhé!');
     });
 
     this.bot.action('pet_sleep', async (ctx) => {
@@ -561,10 +547,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       await ctx.reply(msg, {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
-          [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('🎮 Bắt Bug 30s', 'pet_game')],
-          [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
-          [Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
-          [Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25'), Markup.button.url('📋 PSOI Task', 'https://psoitask.surge.sh/')],
+          [Markup.button.callback('🍖 Cho Ăn', 'pet_feed'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
+          [Markup.button.callback('👋 Xoa Đầu (+3 💖)', 'pet_poke'), Markup.button.callback('🎁 Điểm Danh', 'pet_checkin')],
+          [Markup.button.callback('💤 Đi Ngủ (Sạc ⚡)', 'pet_sleep'), Markup.button.callback('⏱️ Focus 25p', 'pet_focus_25')],
+          [Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
         ]),
       });
     } catch (err) {
@@ -813,135 +799,24 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
   // Sub-handler: /game or /play Mini-game
   private async handleGameCommand(ctx: any) {
     try {
-      const from = ctx.from;
-      if (!from) return;
-      const user = await this.getActiveUserWithPet(from.id);
-      if (!user?.pet) {
-        await ctx.reply('🐾 Bạn chưa có linh thú! Hãy nhận nuôi trước nhé.');
-        return;
-      }
+      const webAppBaseUrl = process.env.WEBAPP_URL || 'https://dev-gotchi-kappa.vercel.app';
+      const webAppGameUrl = `${webAppBaseUrl.replace(/\/$/, '')}?tab=game`;
 
       const msg =
         `🎮 <b>MINI-GAME 30s: BẮT BUG XẢ STRESS! 🐞</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `Thú cưng <b>${user.pet.name}</b> đang rất hăng hái muốn cùng bạn đi săn bug xả stress!\n\n` +
-        `⚡ <b>Luật chơi siêu nhanh (30 giây):</b>\n` +
-        `• Các chú bọ lỗi (Bug 🐞, Worm 🐛, Exception ⚠️, NullPointer 💥) sẽ rơi xuống màn hình.\n` +
-        `• Bạn chỉ cần chạm/tap liên tục để bé thú cưng đè bẹp bug và gom chuỗi combo!\n\n` +
-        `🎁 <b>Bảng phần thưởng chiến lợi phẩm:</b>\n` +
-        `• Bắt ≥ 20 bug: <b>🐳 Thạch Docker / 🍩 Donut</b> + <b>+80 EXP</b> + <b>+25 💖</b>\n` +
-        `• Bắt ≥ 10 bug: <b>🐟 Bánh Cá RAM</b> + <b>+45 EXP</b> + <b>+15 💖</b>\n` +
-        `• Bắt dưới 10 bug: <b>🦐 Tôm Debug</b> + <b>+25 EXP</b> + <b>+10 💖</b>\n\n` +
-        `👉 <b>Chọn cách chơi bên dưới:</b>`;
-
-      const webAppBaseUrl = process.env.WEBAPP_URL || 'https://dev-gotchi-kappa.vercel.app';
-      const webAppGameUrl = `${webAppBaseUrl.replace(/\/$/, '')}?tab=game`;
-      const launchAppButton = Markup.button.webApp('🚀 Mở Mini App Bắt Bug 30s 🕹️', webAppGameUrl);
+        `Mini-game 30s bắt bug xả stress được tích hợp trực tiếp trên giao diện <b>3D Web App</b>.\n\n` +
+        `👉 <b>Hãy bấm nút "Nuôi Pet 🐾"</b> ở góc dưới màn hình, hoặc bấm nút bên dưới để mở app và vào tab <b>🎮 Bắt Bug</b> nhé sen!`;
 
       await ctx.reply(msg, {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
-          [launchAppButton],
-          [Markup.button.callback('⚡ Đập Bug Nhanh Tại Chat', 'quick_smash_start')],
-          [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🍖 Cho Ăn', 'pet_feed')],
-          [Markup.button.callback('🎒 Xem Túi Đồ', 'pet_bag'), Markup.button.url('📋 Mở PSOI Task', 'https://psoitask.surge.sh/')],
+          [Markup.button.webApp('🚀 Mở Nuôi Pet 🐾 (Tab Bắt Bug)', webAppGameUrl)],
+          [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🎒 Túi Đồ', 'pet_bag')],
         ]),
       });
     } catch (err) {
       this.logger.error('handleGameCommand error:', (err as Error).message);
-    }
-  }
-
-  // Quick In-Chat Bug Smash Game (Randomized 3-button whack-a-mole)
-  private async handleQuickSmash(ctx: any) {
-    try {
-      await ctx.answerCbQuery();
-      const options = [
-        Markup.button.callback('📦 Code Sạch', 'quick_smash_miss'),
-        Markup.button.callback('🐞 ĐẬP BỌ LỖI!', 'quick_smash_hit'),
-        Markup.button.callback('☕ Ly Cà Phê', 'quick_smash_miss'),
-      ];
-      // Shuffle buttons so the bug moves around
-      options.sort(() => Math.random() - 0.5);
-
-      const msg =
-        `👀 <b>KÌA CON BUG VỪA XUẤT HIỆN! 🐞</b>\n\n` +
-        `Nó đang chuẩn bị làm crash server production! Đập nhanh vào con bọ trước khi nó tẩu thoát:`;
-
-      await ctx.reply(msg, {
-        parse_mode: 'HTML',
-        ...Markup.inlineKeyboard([
-          options,
-          [Markup.button.callback('🔙 Quay Lại Menu Game', 'pet_game')],
-        ]),
-      });
-    } catch (err) {
-      this.logger.error('handleQuickSmash error:', (err as Error).message);
-    }
-  }
-
-  private async handleQuickSmashHit(ctx: any) {
-    try {
-      const from = ctx.from;
-      if (!from) return;
-
-      const user = await this.getActiveUserWithPet(from.id);
-      if (!user?.pet) return;
-
-      // Award +5 EXP and +3 Happiness
-      const newExp = user.pet.exp + 5;
-      let newLevel = user.pet.level;
-      let newMax = user.pet.maxExp;
-      if (newExp >= newMax) {
-        newLevel += 1;
-        newMax = Math.round(newMax * 1.35);
-      }
-
-      await this.prisma.pet.update({
-        where: { id: user.pet.id },
-        data: {
-          exp: newExp >= newMax ? newExp - newMax : newExp,
-          level: newLevel,
-          maxExp: newMax,
-          happiness: Math.min(100, user.pet.happiness + 3),
-        },
-      });
-
-      await ctx.answerCbQuery('💥 BỐP! ĐÃ ĐÈ BẸP CON BUG!');
-
-      const webAppBaseUrl = process.env.WEBAPP_URL || 'https://dev-gotchi-kappa.vercel.app';
-      const webAppGameUrl = `${webAppBaseUrl.replace(/\/$/, '')}?tab=game`;
-      const launchAppButton = Markup.button.webApp('🚀 Vào Mini App Bắt Bug 30s Cực Đã', webAppGameUrl);
-
-      const msg =
-        `💥 <b>BỐP! BẠN ĐÃ TIÊU DIỆT THÀNH CÔNG CON BUG!</b>\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
-        `🐾 <b>${user.pet.name}</b> nhảy cẫng lên vì vui sướng!\n` +
-        `⭐ Thưởng: <b>+5 EXP</b>\n` +
-        `💖 Hạnh phúc: <b>+3 Điểm</b> (Hiện tại: <b>${Math.min(100, user.pet.happiness + 3)}/100</b>)\n\n` +
-        `🏆 <i>Muốn chơi đã tay hơn với 30 giây liên hoàn bọ rơi, chuỗi Combo x3 và nhặt Thạch Docker/Bánh Cá RAM?</i>\n` +
-        `👇 <b>Bấm mở Mini App bên dưới để chiến ngay:</b>`;
-
-      if (ctx.callbackQuery?.message) {
-        await ctx.editMessageText(msg, {
-          parse_mode: 'HTML',
-          ...Markup.inlineKeyboard([
-            [launchAppButton],
-            [Markup.button.callback('⚡ Đập Tiếp Con Khác', 'quick_smash_start')],
-            [Markup.button.callback('🐾 Xem Thú Cưng', 'pet_status'), Markup.button.callback('🎒 Xem Túi Đồ', 'pet_bag')],
-          ]),
-        });
-      } else {
-        await ctx.reply(msg, {
-          parse_mode: 'HTML',
-          ...Markup.inlineKeyboard([
-            [launchAppButton],
-            [Markup.button.callback('⚡ Đập Tiếp Con Khác', 'quick_smash_start')],
-          ]),
-        });
-      }
-    } catch (err) {
-      this.logger.error('handleQuickSmashHit error:', (err as Error).message);
     }
   }
 

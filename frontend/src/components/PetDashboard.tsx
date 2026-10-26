@@ -75,7 +75,18 @@ export const PetDashboard: React.FC = () => {
     setAfkAdventure,
   } = usePetStore();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('PET');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam === 'game' || tabParam === 'minigame') return 'GAME';
+      if (tabParam === 'focus' || tabParam === 'pomodoro') return 'FOCUS';
+      if (tabParam === 'food' || tabParam === 'bag') return 'FOOD';
+      const startParam = tg.initDataUnsafe?.start_param || urlParams.get('tgWebAppStartParam');
+      if (startParam === 'game' || startParam === 'minigame') return 'GAME';
+    }
+    return 'PET';
+  });
   const [showStudio, setShowStudio] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const [shareToast, setShareToast] = useState<string | null>(null);

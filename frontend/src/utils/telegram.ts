@@ -11,6 +11,7 @@ declare global {
         setBackgroundColor?: (color: string) => void;
         initData?: string;
         initDataUnsafe?: {
+          start_param?: string;
           user?: {
             id: number;
             first_name: string;
@@ -48,6 +49,10 @@ export const tg = {
 
   get webApp() {
     return typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
+  },
+
+  get initDataUnsafe() {
+    return this.webApp?.initDataUnsafe;
   },
 
   get user() {

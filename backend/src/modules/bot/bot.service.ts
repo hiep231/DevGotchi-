@@ -829,15 +829,14 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         `• Các chú bọ lỗi (Bug 🐞, Worm 🐛, Exception ⚠️, NullPointer 💥) sẽ rơi xuống màn hình.\n` +
         `• Bạn chỉ cần chạm/tap liên tục để bé thú cưng đè bẹp bug và gom chuỗi combo!\n\n` +
         `🎁 <b>Bảng phần thưởng chiến lợi phẩm:</b>\n` +
-        `• Bắt $\\ge$ 20 bug: <b>🐳 Thạch Docker / 🍩 Donut</b> + <b>+80 EXP</b> + <b>+25 💖</b>\n` +
-        `• Bắt $\\ge$ 10 bug: <b>🐟 Bánh Cá RAM</b> + <b>+45 EXP</b> + <b>+15 💖</b>\n` +
-        `• Bắt < 10 bug: <b>🦐 Tôm Debug</b> + <b>+25 EXP</b> + <b>+10 💖</b>\n\n` +
+        `• Bắt ≥ 20 bug: <b>🐳 Thạch Docker / 🍩 Donut</b> + <b>+80 EXP</b> + <b>+25 💖</b>\n` +
+        `• Bắt ≥ 10 bug: <b>🐟 Bánh Cá RAM</b> + <b>+45 EXP</b> + <b>+15 💖</b>\n` +
+        `• Bắt dưới 10 bug: <b>🦐 Tôm Debug</b> + <b>+25 EXP</b> + <b>+10 💖</b>\n\n` +
         `👉 <b>Chọn cách chơi bên dưới:</b>`;
 
-      const webAppUrl = process.env.WEBAPP_URL;
-      const launchAppButton = webAppUrl && webAppUrl.startsWith('https://')
-        ? Markup.button.webApp('🚀 Mở Mini App Bắt Bug 30s 🕹️', webAppUrl)
-        : Markup.button.url('🚀 Mở Mini App Bắt Bug 30s 🕹️', 'https://t.me/devgotchi_pet_bot/app');
+      const webAppBaseUrl = process.env.WEBAPP_URL || 'https://dev-gotchi-kappa.vercel.app';
+      const webAppGameUrl = `${webAppBaseUrl.replace(/\/$/, '')}?tab=game`;
+      const launchAppButton = Markup.button.webApp('🚀 Mở Mini App Bắt Bug 30s 🕹️', webAppGameUrl);
 
       await ctx.reply(msg, {
         parse_mode: 'HTML',
@@ -910,10 +909,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
       await ctx.answerCbQuery('💥 BỐP! ĐÃ ĐÈ BẸP CON BUG!');
 
-      const webAppUrl = process.env.WEBAPP_URL;
-      const launchAppButton = webAppUrl && webAppUrl.startsWith('https://')
-        ? Markup.button.webApp('🚀 Vào Mini App Bắt Bug 30s Cực Đã', webAppUrl)
-        : Markup.button.url('🚀 Vào Mini App Bắt Bug 30s Cực Đã', 'https://t.me/devgotchi_pet_bot/app');
+      const webAppBaseUrl = process.env.WEBAPP_URL || 'https://dev-gotchi-kappa.vercel.app';
+      const webAppGameUrl = `${webAppBaseUrl.replace(/\/$/, '')}?tab=game`;
+      const launchAppButton = Markup.button.webApp('🚀 Vào Mini App Bắt Bug 30s Cực Đã', webAppGameUrl);
 
       const msg =
         `💥 <b>BỐP! BẠN ĐÃ TIÊU DIỆT THÀNH CÔNG CON BUG!</b>\n` +

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Bug,
+  PawPrint,
 } from 'lucide-react';
 import { usePetStore } from '../../store/usePetStore';
 import { useFoodsQuery, useMinigameRewardMutation } from '../../hooks/usePetQueries';
@@ -355,9 +356,10 @@ export const CatchBugGame: React.FC<CatchBugGameProps> = ({ onBackToPet }) => {
           {gameState === 'IDLE' && onBackToPet && (
             <button
               onClick={onBackToPet}
-              className="px-3 py-1.5 rounded-xl border-2 border-[var(--ink)] bg-white text-xs font-heading font-extrabold text-[var(--ink)] shadow-[0_2px_0_var(--ink)] active:translate-y-[1px] active:shadow-none cursor-pointer"
+              className="px-3 py-1.5 rounded-xl border-2 border-[var(--ink)] bg-white text-xs font-heading font-black text-[var(--ink)] shadow-[0_2px_0_var(--ink)] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center gap-1.5"
             >
-              🐾 Về Pet
+              <PawPrint className="w-3.5 h-3.5 stroke-[2.5px] text-[var(--coral-deep)]" />
+              <span>Về Pet</span>
             </button>
           )}
         </div>
@@ -604,21 +606,22 @@ export const CatchBugGame: React.FC<CatchBugGameProps> = ({ onBackToPet }) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2.5 mt-2 w-full max-w-[280px]">
               <button
                 onClick={startGame}
-                className="btn-chunky btn-chunky-primary px-5 py-2.5 text-xs font-heading font-black flex items-center gap-1.5 shadow-[0_3px_0_var(--ink)] cursor-pointer"
+                className="flex-1 btn-chunky btn-chunky-primary py-2.5 px-3 text-xs font-heading font-black flex items-center justify-center gap-1.5 whitespace-nowrap shadow-[0_3px_0_var(--ink)] cursor-pointer"
               >
-                <RotateCcw className="w-4 h-4" />
-                <span>Chơi Lại 🔄</span>
+                <RotateCcw className="w-4 h-4 stroke-[2.5px]" />
+                <span>Chơi Lại</span>
               </button>
 
               {onBackToPet && (
                 <button
                   onClick={onBackToPet}
-                  className="px-5 py-2.5 rounded-2xl border-2 border-[var(--ink)] bg-white text-xs font-heading font-black text-[var(--ink)] shadow-[0_3px_0_var(--ink)] active:translate-y-[2px] active:shadow-none cursor-pointer"
+                  className="flex-1 btn-chunky btn-chunky-secondary py-2.5 px-3 text-xs font-heading font-black flex items-center justify-center gap-1.5 whitespace-nowrap shadow-[0_3px_0_var(--ink)] cursor-pointer"
                 >
-                  🐾 Về Chăm Bé
+                  <PawPrint className="w-4 h-4 stroke-[2.5px] text-[var(--coral-deep)]" />
+                  <span>Về Chăm Bé</span>
                 </button>
               )}
             </div>

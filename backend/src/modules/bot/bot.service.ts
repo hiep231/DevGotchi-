@@ -49,6 +49,10 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
     try {
       this.bot = new Telegraf(token);
+      this.bot.catch((err: any, ctx: any) => {
+        this.logger.error(`Telegraf error for ${ctx?.updateType}:`, err?.message || err);
+      });
+
       this.registerHandlers();
 
       // Register Slash Commands Menu with Telegram API
@@ -66,12 +70,48 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       ]);
       this.logger.log('✅ Telegram bot commands registered successfully with Telegram API');
 
-      this.bot.launch(() => {
-        this.logger.log('🤖 DevGotchi Telegram Bot launched successfully!');
-      });
+      const isRender = process.env.RENDER === 'true' || Boolean(process.env.RENDER_EXTERNAL_URL);
+      if (isRender) {
+        const webhookUrl = 'https://devgotchi-backend.onrender.com/api/bot/webhook';
+        await this.bot.telegram.setWebhook(webhookUrl);
+        this.logger.log(`🌐 Telegram Bot registered WEBHOOK mode successfully at: ${webhookUrl}`);
+      } else {
+        const launchBot = async () => {
+          try {
+            if (!this.bot) return;
+            // Delete webhook on local before polling so local polling receives updates cleanly
+            await this.bot.telegram.deleteWebhook({ drop_pending_updates: false });
+            await this.bot.launch({ dropPendingUpdates: false });
+            this.logger.log('🤖 DevGotchi Telegram Bot launched successfully with Long Polling!');
+          } catch (err: any) {
+            this.logger.error('Telegram bot launch error:', err?.message || err);
+            setTimeout(() => {
+              this.logger.log('🔄 Reconnecting Telegram bot...');
+              launchBot();
+            }, 8000);
+          }
+        };
+        launchBot();
+      }
     } catch (err) {
       this.logger.error('Failed to launch Telegram Bot:', (err as Error).message);
     }
+  }
+
+  get botInstance(): Telegraf | null {
+    return this.bot;
+  }
+
+  getStatus() {
+    const isRender = process.env.RENDER === 'true' || Boolean(process.env.RENDER_EXTERNAL_URL);
+    return {
+      status: 'ok',
+      hasToken: Boolean(this.config.get<string>('TELEGRAM_BOT_TOKEN')),
+      mode: isRender ? 'WEBHOOK' : 'POLLING',
+      webhookUrl: isRender ? 'https://devgotchi-backend.onrender.com/api/bot/webhook' : null,
+      uptimeSeconds: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+    };
   }
 
   onModuleDestroy() {
